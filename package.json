@@ -1,0 +1,24 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "backend for PanLang",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Pan-Lang/backend.git"
+  },
+  "keywords": [
+    "backend",
+    "mongodb",
+    "api"
+  ],
+  "author": "Kevin Zhou, Katie Sanders",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Pan-Lang/backend/issues"
+  },
+  "homepage": "https://github.com/Pan-Lang/backend#readme"
+}
