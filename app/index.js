@@ -1,5 +1,6 @@
 const express = require('express')
 const MongoClient = require('mongodb').MongoClient
+const cors = require('cors')
 const app = express()
 const port = process.env.PORT||3000
 const router = express.Router();
@@ -13,6 +14,8 @@ async function getStockCollection() {
   const coll = client.db("mckinley-foundation").collection("stock")
   return coll
 }
+
+app.use(cors())
 
 app.get('/', (req, res) => {
   res.send('Hello World!')
