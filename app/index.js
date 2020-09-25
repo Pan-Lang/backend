@@ -11,7 +11,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true })
 async function getStockCollection() {
   await client.connect()
   const coll = client.db("mckinley-foundation").collection("stock")
-  return coll
+  return coll.find()
 }
 
 app.get('/', (req, res) => {
@@ -27,13 +27,16 @@ app.get('/help', (req, res) => {
 })
 
 app.put('/stock', (req, res) => {
-  getPeopleCollection().find().then(result => {
+  getPeopleCollection().then(result => {
     console.log(result)
   })
 })
 
 app.get('/stock', (req, res) => {
   getStockCollection().then(result => {
-    console.log(result)
+    result.forEach(function(doc) {
+      const JSONdoc = toJSON(doc)
+      console.log(JSONdoc)
+    })
   })
 })
