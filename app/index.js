@@ -66,5 +66,9 @@ app.get('/stock', (req, res) => {
 // Creates a new stock item
 // Request body example : {"name" : "Lays potato chips", "count" : 20}
 app.post('/stock', (req, res) => {
-  // code here
+  const jsonBody = {"name" : "Lays potato chips", "count" : 20}//req.body
+
+  getStockCollection().then(coll => [
+    console.log(coll.insertOne(jsonBody))
+  ])
 })
