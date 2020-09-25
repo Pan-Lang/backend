@@ -109,7 +109,7 @@ app.put('/stock/:id', (req, res) => {
   let newCount = req.body.newCount
   console.log(id)
   getStockCollection().then(result => {
-    result.findOneAndUpdate({"_id": id},{$set: {"count": newCount}}, {upsert: true}).then(collReturn => {
+    result.findOneAndUpdate({"_id": id},{$set: {"count": newCount}}).then(collReturn => {
       res.send(`${collReturn.value._id} amount changed to ${collReturn.value.count}`)
     }).catch(err => {
       res.send("Error with id or server")
