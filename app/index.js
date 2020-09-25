@@ -23,7 +23,8 @@ async function getStockCollection() {
 app.use(cors())
 
 app.get('/', (req, res) => {
-  res.send(translateText())
+  translateText()
+  res.send("Hello World!")
 })
 
 app.listen(port, () => {
