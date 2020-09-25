@@ -66,6 +66,6 @@ app.post('/stock', (req, res) => {
   const jsonBody = {"name" : "Lays potato chips", "count" : 20}//req.body
 
   getStockCollection().then(coll => [
-    coll.insertOne(jsonBody)
+    console.log(coll.insertOne(jsonBody))
   ])
 })
