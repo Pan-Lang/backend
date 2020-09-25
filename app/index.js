@@ -1,6 +1,10 @@
 const express = require('express')
 const MongoClient = require('mongodb').MongoClient
 const {Translate} = require('@google-cloud/translate').v2; // Import Google's Node.js client library for the Translate API https://cloud.google.com/translate/docs/reference/libraries/v2/nodejs
+const cors = require('cors')
+
+
+
 const app = express()
 app.use(express.json()); // JSON middleware
 const port = process.env.PORT||3000
@@ -19,7 +23,7 @@ async function getStockCollection() {
 app.use(cors())
 
 app.get('/', (req, res) => {
-  res.send('Hello World!')
+  res.send(translateText())
 })
 
 app.listen(port, () => {
@@ -43,7 +47,7 @@ async function translateText() {
   });
 }
 
-translateText();
+
 
 // *********** Person Endpoints *********** //
 
@@ -113,9 +117,13 @@ app.get('/stock', (req, res) => {
 // Creates a new stock item
 // Request body example : {"name" : "Lays potato chips", "count" : 20}
 app.post('/stock', (req, res) => {
-  const jsonBody = {"name" : "Lays potato chips", "count" : 20}//req.body
+  const jsonBody = {"name" : "Lays potato chips", "count" : 20, "timestamp" : new Date()}//req.body
 
   getStockCollection().then(coll => [
-    console.log(coll.insertOne(jsonBody))
+    coll.insertOne(jsonBody).then(collReturn => {
+      console.log(collReturn)
+      console.log(collReturn.insertedId)
+      console.log(new Date())
+    })
   ])
 })
