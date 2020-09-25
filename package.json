@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/Pan-Lang/backend#readme",
   "dependencies": {
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "mongodb": "^3.6.2"
   }
 }
