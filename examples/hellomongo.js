@@ -29,18 +29,18 @@ async function insert(data) {
 }
 
 //the result needs a callback function, result is a cursor
-// find().then((cursor) => {
-//     //cursors functions are asynchronous, they need a callback function
-//     cursor.forEach(function(val) {
-//         console.log(val);
-//     }) 
+find().then((cursor) => {
+    //cursors functions are asynchronous, they need a callback function
+    cursor.forEach(function(val) {
+        console.log(val);
+    }) 
 
-//     /*  This is also the same thing
-//     cursor.forEach(val => {
-//         console.log(val);
-//     }) 
-//     */
-// })
+    /*  This is also the same thing
+    cursor.forEach(val => {
+        console.log(val);
+    }) 
+    */
+})
 
 const newUser = {
     name: "Kevin Zou",
