@@ -1,5 +1,6 @@
 const express = require('express')
 const MongoClient = require('mongodb').MongoClient
+const cors = require('cors')
 const {Translate} = require('@google-cloud/translate').v2; // Import Google's Node.js client library for the Translate API https://cloud.google.com/translate/docs/reference/libraries/v2/nodejs
 const app = express()
 app.use(express.json()); // JSON middleware
@@ -9,6 +10,11 @@ const uri = "mongodb+srv://QwertycowMoo:2Deb9281a1asdf@panlang-cluster.ipmwv.mon
 const client = new MongoClient(uri, { useNewUrlParser: true })
 const translate = new Translate(); // creates a client
 
+// *********** fastCSV Setup *********** //
+const fastcsv = require("fast-csv")
+const fs = require("fs")
+// const writeStream = fs.createWriteStream("panlang_mongodb_fastcsv.csv")
+let url = "mongodb://localhost:27017/people"
 
 async function getStockCollection() {
   await client.connect()
@@ -28,33 +34,66 @@ app.listen(port, () => {
 
 // *********** API Functions *********** //
 
-const text = 'сука блять';
-const target = 'eng';
+const text = 'сука блять'
+const target = 'eng'
 
 async function translateText() {
   // Translates the text into the target language. "text" can be a string for
   // translating a single piece of text, or an array of strings for translating
   // multiple texts.
-  let [translations] = await translate.translate(text, target);
-  translations = Array.isArray(translations) ? translations : [translations];
-  console.log('Translations:');
+  let [translations] = await translate.translate(text, target)
+  translations = Array.isArray(translations) ? translations : [translations]
+  console.log('Translations:')
   translations.forEach((translation, i) => {
-    console.log(`${text[i]} => (${target}) ${translation}`);
+    console.log(`${text[i]} => (${target}) ${translation}`)
   });
 }
 
-translateText();
+// translateText();
 
-// *********** Person Endpoints *********** //
+// *********** People Endpoints *********** //
 
-// Gets all of the person records
+// Gets all of the people records
 // Probably returns them back as a formatted text file at a button press
-app.get('/person', (req, res) => {
-  // code here
+app.get('/people', async (req, res) => {
+  if (Object.keys(req.body).length === 0) {
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=\"' + 'download-' + Date.now() + '.csv\"');
+
+    await client.connect()
+    const coll = client.db("mckinley-foundation").collection("people")
+
+     MongoClient.connect(
+      url, {useNewUrlParser: true, useUnifiedTopology: true },
+      (err, client) => {
+        if (err) throw err;
+
+        coll.find({}).toArray((err, data) => {
+            if (err) throw err;
+
+            console.log(data)
+            fastcsv
+              .write(data, {headers: true})
+              .on("finish", function() {
+                console.log("Write to database was successful.")
+              })
+              .pipe(res) // this was originally WriteStream
+
+
+
+
+            // client.close();
+          });
+      }
+    );
+
+    // res.sendStatus(200);
+  }
 })
 
-// Creates a new person record in the format of our JSON schema
-app.post('/person', async (req, res) => {
+// Creates a new people record in the format of our JSON schema
+app.post('/people', async (req, res) => {
   // code here
   // console.log(req.body)
   // console.log(req.body.zipcode)
@@ -66,22 +105,24 @@ app.post('/person', async (req, res) => {
   // console.log(x);
 
   await client.connect()
-  const coll = client.db("mckinley-foundation").collection("person")
+  const coll = client.db("mckinley-foundation").collection("people")
   await coll.insertOne(req.body);
-  coll.find().forEach(({firstname, lastname}) => { // object destructuring happening in the args
-    console.log(`${firstname} has a lastname : ${lastname}`) // template strings
-  })
+  res.sendStatus(200); // our response--operation was successful
 
-  // coll.find().forEach((person) => {
+  // coll.find().forEach(({firstname, lastname, adults, children, zipcode, timestamp, order_notes}) => { // object destructuring happening in the args
+  //   console.log(`${firstname} has a lastname : ${lastname} and num adults: ${adults}`) // template strings
+  // })
+
+
+
+  // coll.find().forEach((people) => {
 
 
 
   // })
-  // coll.find().forEach(function hello(person)  {
+  // coll.find().forEach(function hello(people)  {
 
   // });
-
-  res.send(200); // our response
 })
 
 
