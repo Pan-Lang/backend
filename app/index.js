@@ -2,11 +2,13 @@ const express = require('express')
 const MongoClient = require('mongodb').MongoClient
 const {Translate} = require('@google-cloud/translate').v2; // Import Google's Node.js client library for the Translate API https://cloud.google.com/translate/docs/reference/libraries/v2/nodejs
 const cors = require('cors')
-
+const bodyParser = require('body-parser');
+const { ObjectID } = require('mongodb');
 
 
 const app = express()
 app.use(express.json()); // JSON middleware
+app.use(bodyParser.json())
 const port = process.env.PORT||3000
 
 const uri = "mongodb+srv://QwertycowMoo:2Deb9281a1asdf@panlang-cluster.ipmwv.mongodb.net/mckinley-foundation?retryWrites=true&w=majority"
@@ -33,21 +35,29 @@ app.listen(port, () => {
 
 // *********** API Functions *********** //
 
-const text = 'сука блять';
-const target = 'eng';
 
-async function translateText() {
+
+
+async function translateText(text, lang) {
   // Translates the text into the target language. "text" can be a string for
   // translating a single piece of text, or an array of strings for translating
   // multiple texts.
-  let [translations] = await translate.translate(text, target);
+  let [translations] = await translate.translate(text, lang);
+  let t
   translations = Array.isArray(translations) ? translations : [translations];
-  console.log('Translations:');
-  translations.forEach((translation, i) => {
-    console.log(`${text[i]} => (${target}) ${translation}`);
+  //In out implementation its only one item in translation, not an array. If you pass an array it will only return the last item in that array
+  translations.forEach((translation) => {
+    t = translation;
   });
+  return t
 }
+async function listLanguages() {
+  // Lists available translation language with their names in English (the default).
+  const [languages] = await translate.getLanguages()
 
+  console.log('Languages:')
+  languages.forEach(language => console.log(language))
+}
 
 
 // *********** Person Endpoints *********** //
@@ -94,9 +104,16 @@ app.post('/person', async (req, res) => {
 
 // Updates the amount of stock 
 // Request body example: { "newCount" : 12}
-app.put('/stock', (req, res) => {
-  getPeopleCollection().then(result => {
-    req.body
+app.put('/stock/:id', (req, res) => {
+  let id = req.params.id
+  let newCount = req.body.newCount
+  console.log(id)
+  getStockCollection().then(result => {
+    result.findOneAndUpdate({"_id": id},{$set: {"count": newCount}}, {upsert: true}).then(collReturn => {
+      res.send(`${collReturn.value._id} amount changed to ${collReturn.value.count}`)
+    }).catch(err => {
+      res.send("Error with id or server")
+    })
   })
 })
 
@@ -118,13 +135,39 @@ app.get('/stock', (req, res) => {
 // Creates a new stock item
 // Request body example : {"name" : "Lays potato chips", "count" : 20}
 app.post('/stock', (req, res) => {
-  const jsonBody = {"name" : "Lays potato chips", "count" : 20, "timestamp" : new Date()}//req.body
+  let body = req.body
+  let timestamp = new Date()
+  let fooditem = body.name
+  let spanish, chinese, french, json
+  console.log(fooditem)
 
-  getStockCollection().then(coll => [
-    coll.insertOne(jsonBody).then(collReturn => {
-      console.log(collReturn)
-      console.log(collReturn.insertedId)
-      console.log(new Date())
+  translateText(fooditem, 'es').then(sp => {
+    spanish = sp;
+    translateText(fooditem, 'zh').then(zh => {
+      chinese = zh;
+      translateText(fooditem, "fr").then(fr => {
+        french = fr;
+        id = fooditem.replace(/\s+/g, '');
+        json = {
+          "_id": id,
+          "name": fooditem,
+          "spanish": spanish,
+          "chinese": chinese,
+          "french": french,
+          "count": body.count,
+          "timestamp": timestamp
+        }
+        getStockCollection().then(coll => {
+          coll.insertOne(json).then(collReturn => {
+            res.send(collReturn.insertedId)
+          }).catch(err => {
+            res.send("item already exists!")
+          })
+        })
+      })
     })
-  ])
+    
+  })
 })
+
+//curl -d {\"name\":\"Beef 2lbs\"\} -H "Content-Type: application/json" -X POST "http://localhost:3000/myendpoint"
