@@ -13,8 +13,14 @@ const translate = new Translate(); // creates a client
 async function getStockCollection() {
   await client.connect()
   const coll = client.db("mckinley-foundation").collection("stock")
-  return coll.find()
+  return coll
 }
+
+app.use(cors())
+
+app.get('/', (req, res) => {
+  res.send('Hello World!')
+})
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`)
@@ -85,19 +91,24 @@ app.post('/person', async (req, res) => {
 // Request body example: { "newCount" : 12}
 app.put('/stock', (req, res) => {
   getPeopleCollection().then(result => {
-    console.log(result)
+    req.body
   })
 })
 
 // Gets all of the stock as a JSON object
 app.get('/stock', (req, res) => {
-  getStockCollection().then(result => {
-    result.forEach(doc => {
-      const JSONdoc = JSON.parse(doc)
-      console.log(JSONdoc)
+  getStockCollection().then(coll => {
+    findResult = coll.find()
+    let r = []
+    findResult.forEach(function(doc) {
+      r.push(doc)
+    }).then(function() {
+      res.jsonp(r)
     })
-  })
+    })
+    
 })
+
 
 // Creates a new stock item
 // Request body example : {"name" : "Lays potato chips", "count" : 20}

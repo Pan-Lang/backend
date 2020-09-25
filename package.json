@@ -25,6 +25,7 @@
   "dependencies": {
     "@google-cloud/translate": "^6.0.3",
     "express": "^4.17.1",
-    "mongodb": "^3.6.2"
+    "mongodb": "^3.6.2",
+    "cors": "^2.8.5"
   }
 }
