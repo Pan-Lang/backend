@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 const { ObjectID } = require('mongodb');
 const socketio = require('socket.io');
 const socketindex = require('./routes/socketio')
+const ObjectId = require('mongodb').ObjectId
 
 const app = express()
 app.use(express.json()); // JSON middleware
@@ -29,20 +30,19 @@ const io = socketio(server)
 getPeopleCollection().then(coll => {
 
   console.log("inside collection listner")
-  //when the react app connects, starts emitting any changes based on the tailable cursor
-    io.on("connection", (socket=> {
-      console.log("open tailable cursor")
+  //TODO: when the react app connects, starts emitting any changes based on the tailable cursor
+    io.on("connection", (socket => {
+    
       let cursor = coll.find({"fulfilled": false}, {tailable:true, awaitdata:true, numberOfRetries:-1})
-      .each(function(err, doc){
-        console.log(doc)
+      //console.log(cursor)
+      cursor.each(function(err, doc){
         socket.emit("person", doc);
       })
       
-      
-
       //socket loading is really slow idk if its because we're opening a new cursor and not closing it
-      socket.on("personFulfilled", person=> {
-        console.log(person)
+      socket.on("personFulfilled", personId=> {
+        let id = ObjectId(personId)  
+        coll.updateOne({"_id":id},{$set: {"fulfilled": true}})  
       })
       
     })
