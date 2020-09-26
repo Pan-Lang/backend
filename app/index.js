@@ -29,6 +29,13 @@ app.get('/', (req, res) => {
 //********** SocketIO ********* //
 let interval
 
+getPeopleCollection().then(coll => {
+  coll.find({}, {tailable:true, awaitdata:true, numberOfRetries:-1})
+  .each(function(err, doc){
+    console.log(doc)
+    socket.emit("person", doc);
+  })
+})
 const io = socketio(server)
 //connect
 io.on("connection", (socket) => {
@@ -44,6 +51,10 @@ io.on("connection", (socket) => {
   })
 })
 
+/*i think what we can do is a combination of both because right now we have a socket that's just blasting things out
+  and we can use a api get to get the initial things
+  but then listen to the socket for the remaining things and when they are changed*/ 
+
 
 const getApiAndEmit = socket => {
   const response = new Date();
@@ -54,6 +65,12 @@ const getApiAndEmit = socket => {
 async function getStockCollection() {
   await client.connect()
   const coll = client.db("mckinley-foundation").collection("stock")
+  return coll
+}
+
+async function getPeopleCollection() {
+  await client.connect()
+  const coll = client.db("mckinley-foundation").collection("people")
   return coll
 }
 
@@ -89,7 +106,16 @@ async function listLanguages() {
 // Gets all of the person records
 // Probably returns them back as a formatted text file at a button press
 app.get('/person', (req, res) => {
-  // code here
+  getPeopleCollection().then(result => {
+    findResult = result.find()
+    let r = []
+    findResult.forEach(function(doc) {
+      r.push(doc)
+    }).then(function() {
+      res.jsonp(r)
+    })
+  })
+
 })
 
 // Creates a new person record in the format of our JSON schema
