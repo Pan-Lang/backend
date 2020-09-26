@@ -4,39 +4,79 @@ const {Translate} = require('@google-cloud/translate').v2; // Import Google's No
 const cors = require('cors')
 const bodyParser = require('body-parser');
 const { ObjectID } = require('mongodb');
-
+const socketio = require('socket.io');
+const socketindex = require('./routes/socketio')
+const ObjectId = require('mongodb').ObjectId
 
 const app = express()
 app.use(express.json()); // JSON middleware
 app.use(bodyParser.json())
+app.use(cors())
+app.use(socketindex)
 const port = process.env.PORT||3000
 
 const uri = "mongodb+srv://QwertycowMoo:2Deb9281a1asdf@panlang-cluster.ipmwv.mongodb.net/mckinley-foundation?retryWrites=true&w=majority"
 const client = new MongoClient(uri, { useNewUrlParser: true })
 const translate = new Translate(); // creates a client
 
+
+const server = app.listen(port, () => {
+  console.log(`Example app listening at http://localhost:${port}`)
+})
+
+//********** SocketIO ********* //
+
+const io = socketio(server)
+getPeopleCollection().then(coll => {
+
+  console.log("inside collection listner")
+  //TODO: when the react app connects, starts emitting any changes based on the tailable cursor
+    io.on("connection", (socket => {
+    
+      let cursor = coll.find({"fulfilled": false}, {tailable:true, awaitdata:true, numberOfRetries:-1})
+      //console.log(cursor)
+      cursor.each(function(err, doc){
+        socket.emit("person", doc);
+      })
+      
+      //socket loading is really slow idk if its because we're opening a new cursor and not closing it
+      socket.on("personFulfilled", personId=> {
+        let id = ObjectId(personId)  
+        coll.updateOne({"_id":id},{$set: {"fulfilled": true}})  
+      })
+      
+    })
+    )
+    
+
+    
+})
+
+
 // *********** fastCSV Setup *********** //
 const fastcsv = require("fast-csv")
 const fs = require("fs")
 // const writeStream = fs.createWriteStream("panlang_mongodb_fastcsv.csv")
 
-
+// *********** API Helper functions for API and Socket **********//
 async function getStockCollection() {
   await client.connect()
   const coll = client.db("mckinley-foundation").collection("stock")
   return coll
 }
 
-app.use(cors())
+async function getPeopleCollection() {
+  await client.connect()
+  const coll = client.db("mckinley-foundation").collection("people")
+  return coll
+}
 
 app.get('/', (req, res) => {
   translateText()
   res.send("Hello World!")
 })
 
-app.listen(port, () => {
-  console.log(`Example app listening at http://localhost:${port}`)
-})
+
 
 // *********** API Functions *********** //
 
@@ -54,13 +94,7 @@ async function translateText(text, lang) {
   });
   return t
 }
-async function listLanguages() {
-  // Lists available translation language with their names in English (the default).
-  const [languages] = await translate.getLanguages()
 
-  console.log('Languages:')
-  languages.forEach(language => console.log(language))
-}
 
 // *********** People Endpoints *********** //
 
