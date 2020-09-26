@@ -3,12 +3,15 @@ const MongoClient = require('mongodb').MongoClient
 const {Translate} = require('@google-cloud/translate').v2; // Import Google's Node.js client library for the Translate API https://cloud.google.com/translate/docs/reference/libraries/v2/nodejs
 const cors = require('cors')
 const bodyParser = require('body-parser');
-const { ObjectID } = require('mongodb');
-
+const { ObjectID, Cursor } = require('mongodb');
+const socketio = require('socket.io');
+const index = require('./routes/socketio')
 
 const app = express()
 app.use(express.json()); // JSON middleware
 app.use(bodyParser.json())
+app.use(cors())
+app.use(index)
 const port = process.env.PORT||3000
 
 const uri = "mongodb+srv://QwertycowMoo:2Deb9281a1asdf@panlang-cluster.ipmwv.mongodb.net/mckinley-foundation?retryWrites=true&w=majority"
@@ -16,22 +19,43 @@ const client = new MongoClient(uri, { useNewUrlParser: true })
 const translate = new Translate(); // creates a client
 
 
+const server = app.listen(port, () => {
+  console.log(`Example app listening at http://localhost:${port}`)
+})
+
+app.get('/', (req, res) => {
+  res.send("Hello World!")
+})
+//********** SocketIO ********* //
+let interval
+
+const io = socketio(server)
+//connect
+io.on("connection", (socket) => {
+  console.log("New connection")
+  if (interval) {
+    clearInterval(interval);
+  }
+  //every 1000 ms it will do a callback and call getApiAndEmit
+  interval = setInterval(() => getApiAndEmit(socket), 1000);
+  //disconnect
+  socket.on("disconnect", () => {
+    console.log("Client disconnected")
+  })
+})
+
+
+const getApiAndEmit = socket => {
+  const response = new Date();
+
+  socket.emit("FromAPI", response);
+}
+//**********API Helper Functions ************* //
 async function getStockCollection() {
   await client.connect()
   const coll = client.db("mckinley-foundation").collection("stock")
   return coll
 }
-
-app.use(cors())
-
-app.get('/', (req, res) => {
-  translateText()
-  res.send("Hello World!")
-})
-
-app.listen(port, () => {
-  console.log(`Example app listening at http://localhost:${port}`)
-})
 
 // *********** API Functions *********** //
 
@@ -111,6 +135,7 @@ app.put('/stock/:id', (req, res) => {
   getStockCollection().then(result => {
     result.findOneAndUpdate({"_id": id},{$set: {"count": newCount}}).then(collReturn => {
       res.send(`${collReturn.value._id} amount changed to ${collReturn.value.count}`)
+      
     }).catch(err => {
       res.send("Error with id or server")
     })
