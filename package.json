@@ -4,8 +4,8 @@
   "description": "backend for PanLang",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node app/index.js"
+    "start-dev": "NODE_ENV=development node app/index.js",
+    "start": "NODE_ENV=production node app/index.js"
   },
   "repository": {
     "type": "git",

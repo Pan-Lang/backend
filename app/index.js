@@ -53,43 +53,66 @@ async function translateText() {
 
 // *********** People Endpoints *********** //
 
-// Gets all of the people records
-// Probably returns them back as a formatted text file at a button press
+// Grabs the records of patrons that visited the foodbank within the period of time specified in the request
+// Downloads the data as a CSV file to the user's computer/smartphone
 app.get('/people', async (req, res) => {
-  if (Object.keys(req.body).length === 0) {
 
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=\"' + 'download-' + Date.now() + '.csv\"');
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename=\"' + 'download-' + Date.now() + '.csv\"');
 
-    await client.connect()
-    const coll = client.db("mckinley-foundation").collection("people")
+  await client.connect()
+  const coll = client.db("mckinley-foundation").collection("people")
 
-     MongoClient.connect(
-      url, {useNewUrlParser: true, useUnifiedTopology: true },
-      (err, client) => {
-        if (err) throw err;
+  // Grabbing the patron info from mongo
+    MongoClient.connect(
+    url, {useNewUrlParser: true, useUnifiedTopology: true },
+    (err, client) => {
+      if (err) throw err;
 
+      // Grabs the records of ALL patrons that ever visited the foodbank
+      if (Object.keys(req.body).length === 0) { // Checking for empty GET request
         coll.find({}).toArray((err, data) => {
-            if (err) throw err;
+          if (err) throw err;
 
-            console.log(data)
-            fastcsv
-              .write(data, {headers: true})
-              .on("finish", function() {
-                console.log("Write to database was successful.")
-              })
-              .pipe(res) // this was originally WriteStream
+          console.log(data)
+        
+          // Writing the data to a CSV file and downloading it in the browser
+          fastcsv
+            .write(data, {headers: true})
+            .on("finish", function() {
+              console.log("Write to database was successful.")
+            })
+            .pipe(res) // this was originally WriteStream
+          client.close();
+        });
+      // Only grabs the records of patrons that visited in the specified time period
+      } else if (Object.keys(req.body).length === 2) { // We should recieve only the month and the year in our request
+        
+        const {month, year} = req.body
+        
+        const start_date = new Date(parseInt(year), parseInt(month)-1); // start of the desired month
+        const end_date = new Date(parseInt(year), parseInt(month)); // end of the desired month      
 
+        coll.find({"timestamp" : {"$gte" : start_date, "$lt" : end_date}}).toArray((err, data) => {
+          if (err) throw err;
+          if (process.env.NODE_ENV === "development") {
+            data.forEach(match => { 
+              console.log(match)
+            })
+          }
 
-
-
-            // client.close();
-          });
+          // Writing the data to a CSV file and downloading it in the browser
+          fastcsv
+            .write(data, {headers: true})
+            .on("finish", function() {
+              console.log("Write to database was successful.")
+            })
+            .pipe(res) // this was originally WriteStream
+          client.close();
+        });
       }
-    );
-
-    // res.sendStatus(200);
-  }
+    }
+  );
 })
 
 // Creates a new people record in the format of our JSON schema
@@ -106,6 +129,7 @@ app.post('/people', async (req, res) => {
 
   await client.connect()
   const coll = client.db("mckinley-foundation").collection("people")
+  // req.body.timestamp = new Date() // Adds the current timestamp 
   await coll.insertOne(req.body);
   res.sendStatus(200); // our response--operation was successful
 
