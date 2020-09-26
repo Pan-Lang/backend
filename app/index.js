@@ -15,6 +15,11 @@ const uri = "mongodb+srv://QwertycowMoo:2Deb9281a1asdf@panlang-cluster.ipmwv.mon
 const client = new MongoClient(uri, { useNewUrlParser: true })
 const translate = new Translate(); // creates a client
 
+// *********** fastCSV Setup *********** //
+const fastcsv = require("fast-csv")
+const fs = require("fs")
+// const writeStream = fs.createWriteStream("panlang_mongodb_fastcsv.csv")
+
 
 async function getStockCollection() {
   await client.connect()
@@ -35,9 +40,6 @@ app.listen(port, () => {
 
 // *********** API Functions *********** //
 
-
-
-
 async function translateText(text, lang) {
   // Translates the text into the target language. "text" can be a string for
   // translating a single piece of text, or an array of strings for translating
@@ -48,6 +50,7 @@ async function translateText(text, lang) {
   //In out implementation its only one item in translation, not an array. If you pass an array it will only return the last item in that array
   translations.forEach((translation) => {
     t = translation;
+
   });
   return t
 }
@@ -59,17 +62,47 @@ async function listLanguages() {
   languages.forEach(language => console.log(language))
 }
 
+// *********** People Endpoints *********** //
 
-// *********** Person Endpoints *********** //
+// Grabs the records of patrons that visited the foodbank within the period of time specified in the query
+// Downloads the data as a CSV file to the user's computer/smartphone
+app.get('/people', async (req, res) => {
 
-// Gets all of the person records
-// Probably returns them back as a formatted text file at a button press
-app.get('/person', (req, res) => {
-  // code here
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename=\"' + 'download-' + Date.now() + '.csv\"');
+
+  await client.connect()
+  const coll = client.db("mckinley-foundation").collection("people")
+
+  // Grabbing the patron info from mongo
+  MongoClient.connect(
+    uri, { useNewUrlParser: true, useUnifiedTopology: true },
+    (err, client) => {
+      if (err) throw err;
+
+      const { month, year } = req.query
+      const start_date = new Date(parseInt(year || 0000), parseInt(month || 1) - 1); // start of the desired month
+      const end_date = new Date(parseInt(year || 9999), parseInt(month || 1)); // end of the desired month   
+
+      coll.find({ "timestamp": { "$gte": start_date, "$lt": end_date } }).toArray((err, data) => {
+        if (err) throw err;
+        if (process.env.NODE_ENV === "development") {
+          data.forEach(match => {
+            console.log(match)
+          })
+        }
+        // Writing the data to a CSV file and downloading it in the browser
+        fastcsv
+          .write(data, { headers: true })
+          .pipe(res) // this was originally WriteStream
+        client.close();
+      });
+    }
+  );
 })
 
-// Creates a new person record in the format of our JSON schema
-app.post('/person', async (req, res) => {
+// Creates a new people record in the format of our JSON schema
+app.post('/people', async (req, res) => {
   // code here
   // console.log(req.body)
   // console.log(req.body.zipcode)
@@ -81,22 +114,12 @@ app.post('/person', async (req, res) => {
   // console.log(x);
 
   await client.connect()
-  const coll = client.db("mckinley-foundation").collection("person")
-  await coll.insertOne(req.body);
-  coll.find().forEach(({firstname, lastname}) => { // object destructuring happening in the args
-    console.log(`${firstname} has a lastname : ${lastname}`) // template strings
-  })
-
-  // coll.find().forEach((person) => {
-
-
-
-  // })
-  // coll.find().forEach(function hello(person)  {
-
-  // });
-
-  res.send(200); // our response
+  const coll = client.db("mckinley-foundation").collection("people")
+  await coll.insertOne({
+    ...req.body,
+    timestamp: new Date(),
+  });
+  res.sendStatus(200); // our response--operation was successful
 })
 
 
@@ -122,13 +145,13 @@ app.get('/stock', (req, res) => {
   getStockCollection().then(coll => {
     findResult = coll.find()
     let r = []
-    findResult.forEach(function(doc) {
+    findResult.forEach(function (doc) {
       r.push(doc)
-    }).then(function() {
+    }).then(function () {
       res.jsonp(r)
     })
-    })
-    
+  })
+
 })
 
 
