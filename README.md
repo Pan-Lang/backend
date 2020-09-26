@@ -6,12 +6,12 @@ One of our team members currently volunteers at the Mckinley Foundation Food Pan
 
 ## Tech Stack
 The backend was built with:
-  - Google Cloud Translation API
-  - Socket.io
-  - Axios
-  - Node.js
-  - Express
-  - MongoDB
+  - [Google Cloud Translation API](https://cloud.google.com/translate/docs)
+  - [Socket.io](https://socket.io/)
+  - [Axios](https://github.com/axios/axios)
+  - [Node.js](https://nodejs.org/en/)
+  - [Express](https://expressjs.com/)
+  - [MongoDB](https://www.mongodb.com/)
   - [Fast CSV](https://c2fo.io/fast-csv/)
   
   ## Features
