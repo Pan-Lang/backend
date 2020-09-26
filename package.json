@@ -4,8 +4,8 @@
   "description": "backend for PanLang",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node app/index.js"
+    "start-dev": "NODE_ENV=development node app/index.js",
+    "start": "NODE_ENV=production node app/index.js"
   },
   "repository": {
     "type": "git",
@@ -24,6 +24,7 @@
   "homepage": "https://github.com/Pan-Lang/backend#readme",
   "dependencies": {
     "@google-cloud/translate": "^6.0.3",
+    "fast-csv": "^4.3.2",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "express": "^4.17.1",
