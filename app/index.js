@@ -65,7 +65,7 @@ app.get('/people', async (req, res) => {
 
   // Grabbing the patron info from mongo
   MongoClient.connect(
-    url, { useNewUrlParser: true, useUnifiedTopology: true },
+    uri, { useNewUrlParser: true, useUnifiedTopology: true },
     (err, client) => {
       if (err) throw err;
 
