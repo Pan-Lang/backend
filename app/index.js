@@ -27,7 +27,7 @@ app.get('/', (req, res) => {
   res.send("Hello World!")
 })
 //********** SocketIO ********* //
-let interval
+
 const io = socketio(server)
 getPeopleCollection().then(coll => {
   console.log("inside collection listner")
@@ -81,13 +81,6 @@ async function translateText(text, lang) {
     t = translation;
   });
   return t
-}
-async function listLanguages() {
-  // Lists available translation language with their names in English (the default).
-  const [languages] = await translate.getLanguages()
-
-  console.log('Languages:')
-  languages.forEach(language => console.log(language))
 }
 
 
