@@ -14,7 +14,7 @@ const translate = new Translate(); // creates a client
 const fastcsv = require("fast-csv")
 const fs = require("fs")
 // const writeStream = fs.createWriteStream("panlang_mongodb_fastcsv.csv")
-let url = "mongodb://localhost:27017/people"
+
 
 async function getStockCollection() {
   await client.connect()
@@ -65,7 +65,7 @@ app.get('/people', async (req, res) => {
 
   // Grabbing the patron info from mongo
     MongoClient.connect(
-    url, {useNewUrlParser: true, useUnifiedTopology: true },
+    uri, {useNewUrlParser: true, useUnifiedTopology: true },
     (err, client) => {
       if (err) throw err;
 
