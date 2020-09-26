@@ -28,39 +28,29 @@ app.get('/', (req, res) => {
 })
 //********** SocketIO ********* //
 let interval
-
-getPeopleCollection().then(coll => {
-  coll.find({}, {tailable:true, awaitdata:true, numberOfRetries:-1})
-  .each(function(err, doc){
-    console.log(doc)
-    socket.emit("person", doc);
-  })
-})
 const io = socketio(server)
-//connect
-io.on("connection", (socket) => {
-  console.log("New connection")
-  if (interval) {
-    clearInterval(interval);
-  }
-  //every 1000 ms it will do a callback and call getApiAndEmit
-  interval = setInterval(() => getApiAndEmit(socket), 1000);
-  //disconnect
-  socket.on("disconnect", () => {
-    console.log("Client disconnected")
-  })
+getPeopleCollection().then(coll => {
+  console.log("inside collection listner")
+    io.on("connection", (socket=> {
+      console.log("open tailable cursor")
+      coll.find({"fulfilled": false}, {tailable:true, awaitdata:true, numberOfRetries:-1})
+      .each(function(err, doc){
+        console.log(doc)
+        socket.emit("person", doc);
+      })
+    })
+    )
 })
+
+
+
+//connect
+
 
 /*i think what we can do is a combination of both because right now we have a socket that's just blasting things out
   and we can use a api get to get the initial things
   but then listen to the socket for the remaining things and when they are changed*/ 
 
-
-const getApiAndEmit = socket => {
-  const response = new Date();
-
-  socket.emit("FromAPI", response);
-}
 //**********API Helper Functions ************* //
 async function getStockCollection() {
   await client.connect()
