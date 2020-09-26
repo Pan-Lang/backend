@@ -14,15 +14,12 @@ The backend was built with:
   - [MongoDB](https://www.mongodb.com/)
   - [Fast CSV](https://c2fo.io/fast-csv/)
   
-  ## Features
+  ## Layout
   ![Home Screen](https://i.imgur.com/u7PRu0P.png)
-  This is the Home Page of PanLang! From here, we are able to navigate to new pages that allow us to add patrons, edit stock, or download patron information.
   
   ![Order Page](https://i.imgur.com/9uHDO49.png)
-  This is the Order Page of PanLang!
   
   ![Stock Page](https://i.imgur.com/FfRAhnb.png)
-   This is the Stock Page of PanLang!
   
   ## Installation
   1. Make sure to have npm installed on your machine. Instructions for installing npm can be found [here](https://www.npmjs.com/get-npm).
