@@ -30,17 +30,31 @@ app.get('/', (req, res) => {
 
 const io = socketio(server)
 getPeopleCollection().then(coll => {
+
   console.log("inside collection listner")
+  //when the react app connects, starts emitting any changes based on the tailable cursor
     io.on("connection", (socket=> {
       console.log("open tailable cursor")
-      coll.find({"fulfilled": false}, {tailable:true, awaitdata:true, numberOfRetries:-1})
+      let cursor = coll.find({"fulfilled": false}, {tailable:true, awaitdata:true, numberOfRetries:-1})
       .each(function(err, doc){
         console.log(doc)
         socket.emit("person", doc);
       })
+      
+      
+
+      //socket loading is really slow idk if its because we're opening a new cursor and not closing it
+      socket.on("personFulfilled", person=> {
+        console.log(person)
+      })
+      
     })
     )
+    
+
+    
 })
+
 
 
 
