@@ -1,5 +1,7 @@
 const express = require('express')
 const MongoClient = require('mongodb').MongoClient
+
+
 const {Translate} = require('@google-cloud/translate').v2; // Import Google's Node.js client library for the Translate API https://cloud.google.com/translate/docs/reference/libraries/v2/nodejs
 const cors = require('cors')
 const bodyParser = require('body-parser');
@@ -8,6 +10,7 @@ const socketio = require('socket.io');
 const socketindex = require('./routes/socketio')
 const ObjectId = require('mongodb').ObjectId
 
+
 const app = express()
 app.use(express.json()); // JSON middleware
 app.use(bodyParser.json())
@@ -15,11 +18,10 @@ app.use(cors())
 app.use(socketindex)
 const port = process.env.PORT||3000
 
-const uri = "mongodb+srv://QwertycowMoo:2Deb9281a1asdf@panlang-cluster.ipmwv.mongodb.net/mckinley-foundation?retryWrites=true&w=majority"
-const client = new MongoClient(uri, { useNewUrlParser: true })
+const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true })
 const translate = new Translate(); // creates a client
 
-
+console.log(uri)
 const server = app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`)
 })

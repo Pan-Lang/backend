@@ -1,7 +1,10 @@
 const {Decimal128 } = require('bson');
-
+const { uri } = require('./config');
 const MongoClient = require('mongodb').MongoClient;
+console.log(`The mongo uri in .env is : ${uri}`)
 
+
+/*
 const uri = "mongodb+srv://QwertycowMoo:2Deb9281a1asdf@clusterbegin.ipmwv.mongodb.net/sample_airbnb?retryWrites=true&w=majority";
 const client = new MongoClient(uri, { useNewUrlParser: true });
 /*client.connect(err => {
@@ -9,7 +12,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true });
   // perform actions on the collection object
   console.log(result);
   client.close();
-}); */
+}); 
 
 async function find() {
     await client.connect();
@@ -39,7 +42,7 @@ find().then((cursor) => {
     cursor.forEach(val => {
         console.log(val);
     }) 
-    */
+    
 })
 
 const newUser = {
@@ -51,3 +54,4 @@ const newUser = {
 insert(newUser).then(result => {
     console.log(result);
 });
+*/
