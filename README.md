@@ -14,11 +14,19 @@ The backend was built with:
   - [MongoDB](https://www.mongodb.com/)
   - [Fast CSV](https://c2fo.io/fast-csv/)
   
-  ## Features
-  TODO: add screenshots and a short walkthrough of the app here
+  ## Layout
+  ![Home Screen](https://i.imgur.com/u7PRu0P.png)
+  
+  ![Order Page](https://i.imgur.com/9uHDO49.png)
+  
+  ![Stock Page](https://i.imgur.com/FfRAhnb.png)
   
   ## Installation
-  TODO: add installation details here
+  1. Make sure to have npm installed on your machine. Instructions for installing npm can be found [here](https://www.npmjs.com/get-npm).
+  2. `git clone Pan-Lang` in the designated folder on your machine.
+  3. `npm install` to install the project dependencies.
+  4. The core component of this project makes use of the Google Cloud Translate API. If you want to use translation features, you'll have to make a new project on Google Cloud Platform and generate a new API key. Detailed instructions for this setup can be found [here](https://cloud.google.com/translate/docs/setup).
+  
   
 
   
