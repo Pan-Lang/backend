@@ -16,12 +16,16 @@ app.use(express.json()); // JSON middleware
 app.use(bodyParser.json())
 app.use(cors())
 app.use(socketindex)
+
+const dotenv = require('dotenv')
+dotenv.config();
 const port = process.env.PORT||3000
+const uri = process.env.MONGODB_URI 
+
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true })
 const translate = new Translate(); // creates a client
 
-console.log(uri)
 const server = app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`)
 })
@@ -57,7 +61,8 @@ getPeopleCollection().then(coll => {
 
 // *********** fastCSV Setup *********** //
 const fastcsv = require("fast-csv")
-const fs = require("fs")
+const fs = require("fs");
+//const { config } = require('dotenv/types'); //I really hope i didn't break anything here
 // const writeStream = fs.createWriteStream("panlang_mongodb_fastcsv.csv")
 
 // *********** API Helper functions for API and Socket **********//
