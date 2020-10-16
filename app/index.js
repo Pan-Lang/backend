@@ -22,9 +22,6 @@ app.use(bodyParser.json())
 app.use(cors())
 app.use(socketindex)
 
-
-
-
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true })
 const translate = new Translate(); // creates a client
 
@@ -41,8 +38,10 @@ getPeopleCollection().then(coll => {
   //TODO: when the react app connects, starts emitting any changes based on the tailable cursor
     io.on("connection", (socket => {
       
+      console.log("connection made")
       let cursor = coll.find({"fulfilled": false}, {tailable:true, awaitdata:true, numberOfRetries:-1})
       //console.log(cursor)
+      //had to add CORS everywhere to my firefox browser?
       cursor.each(function(err, doc){
         socket.emit("person", doc);
       })
