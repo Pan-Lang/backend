@@ -1,3 +1,8 @@
+const dotenv = require('dotenv')
+dotenv.config();
+const port = process.env.PORT||3000
+const uri = process.env.MONGODB_URI 
+
 const express = require('express')
 const MongoClient = require('mongodb').MongoClient
 
@@ -17,10 +22,7 @@ app.use(bodyParser.json())
 app.use(cors())
 app.use(socketindex)
 
-const dotenv = require('dotenv')
-dotenv.config();
-const port = process.env.PORT||3000
-const uri = process.env.MONGODB_URI 
+
 
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true })
@@ -38,7 +40,7 @@ getPeopleCollection().then(coll => {
   console.log("inside collection listner")
   //TODO: when the react app connects, starts emitting any changes based on the tailable cursor
     io.on("connection", (socket => {
-    
+      
       let cursor = coll.find({"fulfilled": false}, {tailable:true, awaitdata:true, numberOfRetries:-1})
       //console.log(cursor)
       cursor.each(function(err, doc){
