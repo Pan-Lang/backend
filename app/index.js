@@ -37,8 +37,8 @@ getPeopleCollection().then(coll => {
   console.log("inside collection listner")
   //TODO: when the react app connects, starts emitting any changes based on the tailable cursor
     io.on("connection", (socket => {
-      
-      console.log("connection made")
+      console.log(io.engine.clientsCount)
+      console.log("connection made " + socket.id)
       let cursor = coll.find({"fulfilled": false}, {tailable:true, awaitdata:true, numberOfRetries:-1})
       //console.log(cursor)
       //had to add CORS everywhere to my firefox browser?
@@ -48,10 +48,16 @@ getPeopleCollection().then(coll => {
       
       //socket loading is really slow idk if its because we're opening a new cursor and not closing it
       socket.on("personFulfilled", personId=> {
+        console.log("person fulfilled")
         let id = ObjectId(personId)  
         coll.updateOne({"_id":id},{$set: {"fulfilled": true}})  
+        
       })
-      
+
+      //frontend only disconnects one socket while making 4 more
+      socket.on("disconnect", (socket => {
+        console.log("connection disconnected", socket.id)
+      }))
     })
     )
     
