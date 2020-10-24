@@ -1,3 +1,4 @@
+//can be put into a config.js but current config.js is not being used right now
 const dotenv = require('dotenv')
 dotenv.config();
 const port = process.env.PORT||3000
