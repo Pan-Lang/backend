@@ -1,3 +1,4 @@
+//can be put into a config.js but current config.js is not being used right now
 const dotenv = require('dotenv')
 dotenv.config();
 const port = process.env.PORT||3000
@@ -22,10 +23,7 @@ app.use(bodyParser.json())
 app.use(cors())
 app.use(socketindex)
 
-
-
-
-const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true }) //poolsize 10 for 
 const translate = new Translate(); // creates a client
 
 const server = app.listen(port, () => {
@@ -40,19 +38,28 @@ getPeopleCollection().then(coll => {
   console.log("inside collection listner")
   //TODO: when the react app connects, starts emitting any changes based on the tailable cursor
     io.on("connection", (socket => {
-      
+      console.log("new connection: ", io.engine.clientsCount)
+      console.log("connection made " + socket.id)
       let cursor = coll.find({"fulfilled": false}, {tailable:true, awaitdata:true, numberOfRetries:-1})
       //console.log(cursor)
+      //had to add CORS everywhere to my firefox browser?
       cursor.each(function(err, doc){
         socket.emit("person", doc);
       })
       
       //socket loading is really slow idk if its because we're opening a new cursor and not closing it
       socket.on("personFulfilled", personId=> {
+        console.log("person fulfilled")
         let id = ObjectId(personId)  
         coll.updateOne({"_id":id},{$set: {"fulfilled": true}})  
+        io.sockets.emit("personFulfillSuccess", true);
       })
-      
+
+      //frontend only disconnects one socket while making 4 more
+      socket.on("disconnect", (socket => {
+        console.log("connection disconnected", socket.id)
+        console.log("connections left: ", io.engine.clientsCount)
+      }))
     })
     )
     
