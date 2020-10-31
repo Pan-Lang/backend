@@ -18,11 +18,11 @@ The backend was built with:
   - [Fast CSV](https://c2fo.io/fast-csv/)
   
   ## Layout
-  ![Home Screen](https://i.imgur.com/u7PRu0P.png)
+  ![Home Screen](https://i.imgur.com/MBkCd2z.png)
   
-  ![Order Page](https://i.imgur.com/9uHDO49.png)
+  ![Order Page](https://i.imgur.com/XOxpZuT.png)
   
-  ![Stock Page](https://i.imgur.com/FfRAhnb.png)
+  ![Stock Page](https://i.imgur.com/KGQU9MB.png)
   
   ## Installation
   1. Make sure to have npm installed on your machine. Instructions for installing npm can be found [here](https://www.npmjs.com/get-npm).
