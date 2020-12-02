@@ -1,3 +1,5 @@
+## Currently not up because heroku dyno is not being used to save money
+
 # backend
 Repository for the backend for API and MongoDB.
 
