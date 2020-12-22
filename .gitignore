@@ -139,3 +139,9 @@ dist
 .vscode-test
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,node
+
+
+
+#ignoring our pan-lang json access to google cloud
+
+pan-lang-478af681574d.json
