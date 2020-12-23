@@ -3,6 +3,9 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 admin.initializeApp();
 
+//to deploy
+//********************** firebase deploy --only functions **********************/
+
 //this is an HTTP endpoint, but does not have a specific request, GET POST REPLACE etc
 //Is also synchronous
 exports.addMessage = functions.https.onRequest(async (req, res) => {
@@ -29,3 +32,19 @@ exports.makeUppercase = functions.firestore.document('/messages/{documentId}')
         //writes to Firestore
         return snapshot.ref.set({uppercase}, {merge: true});
     })
+
+exports.stock = functions.https.onRequest(async (req, res) => {
+    var docRef = await admin.firestore().collection("messages");
+    docRef.get().then(function(qSnapshot) {
+        let r = []
+
+        qSnapshot.forEach(function(doc) {
+            r.push(doc.data())
+        });
+        res.jsonp(r);
+    })
+    .catch(function(error) {
+        console.log("Error getting documents: ", error);
+    });
+
+})
