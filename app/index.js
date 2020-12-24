@@ -1,4 +1,6 @@
 //can be put into a config.js but current config.js is not being used right now
+const functions = require('firebase-functions');
+const admin = require('firebase-admin');
 const dotenv = require('dotenv')
 dotenv.config();
 const port = process.env.PORT||3000
