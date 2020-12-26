@@ -10,6 +10,8 @@ const LANGUAGES = ['es', 'de', 'fr', 'sv', 'ga', 'it', 'jp', 'zn-CN', 'sp'] //ne
 
 //to deploy
 //********************** firebase deploy --only functions **********************/
+//firebase init
+//firebase emulators:start
 
 exports.makeUppercase = functions.firestore.document('/messages/{documentId}')
     .onCreate((snapshot, context) => {
@@ -42,12 +44,13 @@ exports.insertSampleStock = functions.https.onRequest(async (req, res) => {
 /**
  * Handles the stock GET and PUT requests
  */
+
 exports.stock = functions.https.onRequest(async (req, res) => {
     res.set('Access-Control-Allow-Origin', '*');
     if (req.method === 'OPTIONS') {
         // Send response to OPTIONS requests
         console.log('doing some CORS stuff');
-        res.set('Access-Control-Allow-Methods', 'GET, POST');
+        res.set('Access-Control-Allow-Methods', 'GET, POST, PUT');
         res.set('Access-Control-Allow-Headers', 'Content-Type');
         res.set('Access-Control-Max-Age', '3600');
         res.status(204).send('');
@@ -65,7 +68,7 @@ exports.stock = functions.https.onRequest(async (req, res) => {
         .catch(error => {
             console.log("Error getting documents: ", error);
         });
-    } else if (req.method === 'POST') {
+    } else if (req.method === 'POST') { //create a new thing
         let docRef = await admin.firestore().collection("stock");
         let data = req.body;
         let fooditem = data.name;
@@ -82,6 +85,8 @@ exports.stock = functions.https.onRequest(async (req, res) => {
             console.log("Error putting documents: ", error);
         })
         res.sendStatus(200);
+    } else if (req.method === "PUT") {
+        //update stock/
     }
 })
 
@@ -107,7 +112,7 @@ exports.stockTranslate = functions.firestore.document("/stock/{stockid}")
         translations.forEach((translation) => {
           t = translation;
       
-        });await
+        });
 
     })
 
@@ -116,7 +121,7 @@ exports.people = functions.https.onRequest(async (req, res) => {
     if (req.method === 'OPTIONS') {
         // Send response to OPTIONS requests
         console.log('doing some CORS stuff');
-        res.set('Access-Control-Allow-Methods', 'GET, POST');
+        res.set('Access-Control-Allow-Methods', 'GET, POST, PUT');
         res.set('Access-Control-Allow-Headers', 'Content-Type');
         res.set('Access-Control-Max-Age', '3600');
         res.status(204).send('');
@@ -143,5 +148,7 @@ exports.people = functions.https.onRequest(async (req, res) => {
             console.log("Error putting documents: ", error);
         })
         res.sendStatus(200);
+    } else if (req.method === 'PUT') {
+        console.log("PUT");
     }
 })
