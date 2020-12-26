@@ -69,6 +69,7 @@ exports.stock = functions.https.onRequest(async (req, res) => {
             console.log("Error getting documents: ", error);
         });
     } else if (req.method === 'POST') { //create a new thing
+        //TODO: make sure the POST request is unique
         let docRef = await admin.firestore().collection("stock");
         let data = req.body;
         let fooditem = data.name;
@@ -140,6 +141,7 @@ exports.people = functions.https.onRequest(async (req, res) => {
             console.log("Error getting documents: ", error);
         });
     } else if (req.method === 'POST') {
+        //TODO: need to check if unique
         let docRef = await admin.firestore().collection("people");
         let data = req.body;
         data[timestamp] = new Date();
