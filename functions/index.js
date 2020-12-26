@@ -1,23 +1,15 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const { response } = require('express');
-const cors = require('cors');
+const {Translate} = require('@google-cloud/translate').v2; // Import Google's Node.js client library for the Translate API https://cloud.google.com/translate/docs/reference/libraries/v2/nodejs
+
 admin.initializeApp();
 
 
+const LANGUAGES = ['es', 'de', 'fr', 'sv', 'ga', 'it', 'jp', 'zn-CN', 'sp'] //need to find the rest of the languages
+
 //to deploy
 //********************** firebase deploy --only functions **********************/
-
-//this is an HTTP endpoint, but does not have a specific request, GET POST REPLACE etc
-//Is also synchronous
-exports.addMessage = functions.https.onRequest(async (req, res) => {
-    //get text param
-    //so the kind of HTTP request would be under req.method
-    //but we can create other exports._________ the same way we make endpoints I think
-    const original = req.query.text;
-    const writeResult = await admin.firestore().collection('messages').add({original: original});
-    res.json({result: `Message with ID: ${writeResult.id} added.`});
-})
 
 exports.makeUppercase = functions.firestore.document('/messages/{documentId}')
     .onCreate((snapshot, context) => {
@@ -47,7 +39,9 @@ exports.insertSampleStock = functions.https.onRequest(async (req, res) => {
     res.json({result: `Message with ID: ${writeResult.id} added.`});
 })
 
-
+/**
+ * Handles the stock GET and PUT requests
+ */
 exports.stock = functions.https.onRequest(async (req, res) => {
     res.set('Access-Control-Allow-Origin', '*');
     if (req.method === 'OPTIONS') {
@@ -58,7 +52,7 @@ exports.stock = functions.https.onRequest(async (req, res) => {
         res.set('Access-Control-Max-Age', '3600');
         res.status(204).send('');
     } else if (req.method === 'GET') {
-        var docRef = await admin.firestore().collection("stock");
+        let docRef = await admin.firestore().collection("stock");
         docRef.get().then(qSnapshot => {
             let r = []
             console.log("inside docref");
@@ -72,8 +66,77 @@ exports.stock = functions.https.onRequest(async (req, res) => {
             console.log("Error getting documents: ", error);
         });
     } else if (req.method === 'POST') {
-        docRef = await admin.firestore().collection("stock");
-        var data = req.body;
+        let docRef = await admin.firestore().collection("stock");
+        let data = req.body;
+        let fooditem = data.name;
+        let _id = fooditem.replace(/\s+/g, '');
+        let timestamp = new Date();
+        let json = {
+            "_id": _id,
+            "name": fooditem,
+            "count": body.count,
+            "timestamp": timestamp
+        }
+        docRef.insertOne(json)
+        .catch(error => {
+            console.log("Error putting documents: ", error);
+        })
+        res.sendStatus(200);
+    }
+})
+
+/**
+ * Handles the translation of a fooditem once inserted into the database
+ */
+exports.stockTranslate = functions.firestore.document("/stock/{stockid}")
+    .onCreate(async (snapshot, context) => {
+        const fooditem = snapshot.data().fooditem;
+        functions.logger.log('Translating', context.params.documentId, fooditem);
+        
+        const promises = []
+        LANGUAGES.forEach(language => {
+            promises.push(async() => { //this is from the firebase example code on github, i dont understand some of it tho
+                //https://github.com/firebase/functions-samples/blob/master/message-translation/functions/index.js
+                const result = await translate.translate(fooditem, language);
+            });
+        });
+        let [translations] = await translate.translate(fooditem, lang);
+        let t
+        translations = Array.isArray(translations) ? translations : [translations];
+        //In out implementation its only one item in translation, not an array. If you pass an array it will only return the last item in that array
+        translations.forEach((translation) => {
+          t = translation;
+      
+        });await
+
+    })
+
+exports.people = functions.https.onRequest(async (req, res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    if (req.method === 'OPTIONS') {
+        // Send response to OPTIONS requests
+        console.log('doing some CORS stuff');
+        res.set('Access-Control-Allow-Methods', 'GET, POST');
+        res.set('Access-Control-Allow-Headers', 'Content-Type');
+        res.set('Access-Control-Max-Age', '3600');
+        res.status(204).send('');
+    } else if (req.method === 'GET') {
+        let docRef = await admin.firestore().collection("people");
+        docRef.get().then(qSnapshot => {
+            let r = []
+            console.log("inside docref");
+            qSnapshot.forEach(doc => {
+                console.log(doc.data());
+                r.push(doc.data())
+            });
+            return res.status(200).jsonp(r);
+        })
+        .catch(error => {
+            console.log("Error getting documents: ", error);
+        });
+    } else if (req.method === 'POST') {
+        let docRef = await admin.firestore().collection("people");
+        let data = req.body;
         data[timestamp] = new Date();
         docRef.insertOne(data)
         .catch(error => {
