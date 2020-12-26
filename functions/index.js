@@ -2,6 +2,7 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const { response } = require('express');
 const {Translate} = require('@google-cloud/translate').v2; // Import Google's Node.js client library for the Translate API https://cloud.google.com/translate/docs/reference/libraries/v2/nodejs
+const fastcsv = require("fast-csv");
 
 admin.initializeApp();
 
@@ -10,7 +11,7 @@ const LANGUAGES = ['es', 'de', 'fr', 'sv', 'ga', 'it', 'jp', 'zn-CN', 'sp'] //ne
 
 //to deploy
 //********************** firebase deploy --only functions **********************/
-//firebase init
+//to emulate
 //firebase emulators:start
 
 exports.makeUppercase = functions.firestore.document('/messages/{documentId}')
@@ -41,8 +42,31 @@ exports.insertSampleStock = functions.https.onRequest(async (req, res) => {
     res.json({result: `Message with ID: ${writeResult.id} added.`});
 })
 
+exports.insertSamplePeople = functions.https.onRequest(async (req, res) => {
+    let person_1 = 
+        {"name": "Kevin",
+         "numAdults": 2,
+         "numChildren": 3,
+         "orderNotes": "1 Box, 2 Hot Dogs, 1 Diaper",
+         "zipcode": 16046,
+         "fulfilled": false,
+         "timestamp": Date.parse('25 Dec 2020 00:00:00 GMT')
+        }
+    let person_2 = 
+        {"name": "Renzo",
+         "numAdults": 4,
+         "numChildren": 4,
+         "orderNotes": "1 Box, 2 Cat Food, 2 Dog Food",
+         "zipcode": 61806,
+         "fulfilled": true,
+         "timestamp": Date.parse('25 Nov 2020 00:00:00 GMT')
+        }
+    const writeResult_1 = await admin.firestore().collection('people').add(person_1);
+    const writeResult_2 = await admin.firestore().collection('people').add(person_2);
+    res.json({result: `Messages with ID: ${writeResult_1.id} ${writeResult_2.id}added.`});
+})
 /**
- * Handles the stock GET and PUT requests
+ * Handles the stock GET, POST, and PUT requests
  */
 
 exports.stock = functions.https.onRequest(async (req, res) => {
@@ -117,6 +141,9 @@ exports.stockTranslate = functions.firestore.document("/stock/{stockid}")
 
     })
 
+/**
+ * Handles the people GET, POST, and PUT requests
+ */
 exports.people = functions.https.onRequest(async (req, res) => {
     res.set('Access-Control-Allow-Origin', '*');
     if (req.method === 'OPTIONS') {
@@ -127,15 +154,31 @@ exports.people = functions.https.onRequest(async (req, res) => {
         res.set('Access-Control-Max-Age', '3600');
         res.status(204).send('');
     } else if (req.method === 'GET') {
+        //setup for csv transfer
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename="' + 'download-' + Date.now() + '.csv"');
+        //setup for current month
+        console.log(req.query);
+        const { month, year } = req.query;
+        const start_date = new Date(parseInt(year || 0), parseInt(month || 1) - 1); // start of the desired month
+        const end_date = new Date(parseInt(year || 9999), parseInt(month || 1)); // end of the desired month   
+
         let docRef = await admin.firestore().collection("people");
-        docRef.get().then(qSnapshot => {
+        //query to get only people entries with a timestamp of the requested month
+        let query = docRef.where("timestamp", ">=", start_date.getTime()).where("timestamp", "<", end_date.getTime());
+        query.get().then(qSnapshot => {
+            //add all results to an array
             let r = []
             console.log("inside docref");
             qSnapshot.forEach(doc => {
                 console.log(doc.data());
                 r.push(doc.data())
             });
-            return res.status(200).jsonp(r);
+            //write to a csv and download
+            fastcsv
+            .write(r, { headers: true })
+            .pipe(res)
+            return res.status(200);
         })
         .catch(error => {
             console.log("Error getting documents: ", error);
