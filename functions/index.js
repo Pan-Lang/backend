@@ -1,10 +1,15 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+var serviceAccount = require("../pan-lang-firebase-adminsdk-4lptv-9bcce7a9e5.json");
+
 const { response } = require('express');
 const {Translate} = require('@google-cloud/translate').v2; // Import Google's Node.js client library for the Translate API https://cloud.google.com/translate/docs/reference/libraries/v2/nodejs
 const fastcsv = require("fast-csv");
 
-admin.initializeApp();
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: "https://pan-lang-default-rtdb.firebaseio.com"
+});
 
 
 const LANGUAGES = ['es', 'de', 'fr', 'sv', 'ga', 'it', 'jp', 'zn-CN', 'sp'] //need to find the rest of the languages
@@ -37,7 +42,7 @@ exports.insertSampleStock = functions.https.onRequest(async (req, res) => {
          "chinese": "鸡胸肉",
          "spanish": "Pechuga de pollo",
          "count": 26,
-         "timestamp": new Date()}
+         "timestamp": new admin.firestore.Timestamp(Math.floor(new Date().getTime()/1000), 0)}
     const writeResult = await admin.firestore().collection('stock').add(stock_1);
     res.json({result: `Message with ID: ${writeResult.id} added.`});
 })
@@ -50,7 +55,7 @@ exports.insertSamplePeople = functions.https.onRequest(async (req, res) => {
          "orderNotes": "1 Box, 2 Hot Dogs, 1 Diaper",
          "zipcode": 16046,
          "fulfilled": false,
-         "timestamp": Date.parse('25 Dec 2020 00:00:00 GMT')
+         "timestamp": new admin.firestore.Timestamp(new Date('25 Dec 2020 00:00:00 GMT')/1000, 0)
         }
     let person_2 = 
         {"name": "Renzo",
@@ -59,7 +64,7 @@ exports.insertSamplePeople = functions.https.onRequest(async (req, res) => {
          "orderNotes": "1 Box, 2 Cat Food, 2 Dog Food",
          "zipcode": 61806,
          "fulfilled": true,
-         "timestamp": Date.parse('25 Nov 2020 00:00:00 GMT')
+         "timestamp": new admin.firestore.Timestamp(new Date('25 Nov 2020 00:00:00 GMT')/1000, 0)
         }
     const writeResult_1 = await admin.firestore().collection('people').add(person_1);
     const writeResult_2 = await admin.firestore().collection('people').add(person_2);
@@ -98,7 +103,7 @@ exports.stock = functions.https.onRequest(async (req, res) => {
         let data = req.body;
         let fooditem = data.name;
         let _id = fooditem.replace(/\s+/g, '');
-        let timestamp = new Date();
+        let timestamp = firestore.timestamp(new Date());
         let json = {
             "_id": _id,
             "name": fooditem,
@@ -150,7 +155,7 @@ exports.people = functions.https.onRequest(async (req, res) => {
         // Send response to OPTIONS requests
         console.log('doing some CORS stuff');
         res.set('Access-Control-Allow-Methods', 'GET, POST, PUT');
-        res.set('Access-Control-Allow-Headers', 'Content-Type');
+        res.set('Access-Control-Allow-Headers', 'Content-Type, Content-Disposition');
         res.set('Access-Control-Max-Age', '3600');
         res.status(204).send('');
     } else if (req.method === 'GET') {
@@ -187,13 +192,23 @@ exports.people = functions.https.onRequest(async (req, res) => {
         //TODO: need to check if unique
         let docRef = await admin.firestore().collection("people");
         let data = req.body;
-        data[timestamp] = new Date();
+        data[timestamp] = firestore.timestamp(new Date());
         docRef.insertOne(data)
         .catch(error => {
             console.log("Error putting documents: ", error);
         })
         res.sendStatus(200);
     } else if (req.method === 'PUT') {
-        console.log("PUT");
+        //Switching from socket to just PUT requests
+        //expecting a request body of :
+        /**
+         * personId: kevinzhou1600039487
+         * fulfilled: true
+         */
+        let docRef = await admin.firestore().collection("people");
+        let data = req.body;
+        docRef.get(data.id)
+        
+
     }
 })
