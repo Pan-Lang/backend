@@ -55,7 +55,7 @@ exports.insertSamplePeople = functions.https.onRequest(async (req, res) => {
          "orderNotes": "1 Box, 2 Hot Dogs, 1 Diaper",
          "zipcode": 16046,
          "fulfilled": false,
-         "timestamp": new admin.firestore.Timestamp(new Date('25 Dec 2020 00:00:00 GMT')/1000, 0)
+         "timestamp": new admin.firestore.Timestamp(Math.floor(new Date()/1000), 0)
         }
     let person_2 = 
         {"name": "Renzo",
@@ -63,8 +63,8 @@ exports.insertSamplePeople = functions.https.onRequest(async (req, res) => {
          "numChildren": 4,
          "orderNotes": "1 Box, 2 Cat Food, 2 Dog Food",
          "zipcode": 61806,
-         "fulfilled": true,
-         "timestamp": new admin.firestore.Timestamp(new Date('25 Nov 2020 00:00:00 GMT')/1000, 0)
+         "fulfilled": false,
+         "timestamp": new admin.firestore.Timestamp(Math.floor(new Date()/1000), 0)
         }
     const writeResult_1 = await admin.firestore().collection('people').add(person_1);
     const writeResult_2 = await admin.firestore().collection('people').add(person_2);
@@ -208,29 +208,30 @@ exports.people = functions.https.onRequest(async (req, res) => {
          */
         let docRef = await admin.firestore().collection("people");
         let data = req.body;
-
+        
+        console.log(data);
         //beginning of today
         let startTimestamp = new Date();
         startTimestamp.setHours(0,0,0,0);
-        startTimestamp = new admin.firestore.Timestamp(startTimestamp);
+        startTimestamp = new admin.firestore.Timestamp(Math.floor(startTimestamp.getTime()/1000), 0);
         //end of today
         let endTimestamp = new Date();
         endTimestamp.setHours(23,59,59,999);
-        endTimestamp = new admin.firestore.Timestamp(endTimestamp);
+        endTimestamp = new admin.firestore.Timestamp(Math.floor(endTimestamp.getTime()/1000), 0);
 
-        let query = docRef.where("people", '==', data.name)
+        console.log(startTimestamp, endTimestamp);
+
+        let query = docRef.where("name", '==', data.name)
             .where("timestamp", ">=", startTimestamp)
             .where("timestamp", "<=", endTimestamp);
         
         query.get().then(snapshot => (
             //what if there's a repeat person? Asked McKinley, this may change later
             snapshot.forEach(doc => {
-                const docId = doc.id
-                const result = await docRef.get(docId).update({"fulfilled": true})
-                    .catch(error => {
-                        console.log(error);
-                        res.sendStatus(500); //500 because error will likely be on Firebase end on not our API
-                    });
+                console.log(doc.id);
+                const docId = doc.id;
+                const personRef = docRef.doc(docId);
+                personRef.update({fulfilled: true});
             })
         ))
         res.sendStatus(200);
