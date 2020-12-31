@@ -103,7 +103,7 @@ exports.stock = functions.https.onRequest(async (req, res) => {
         let data = req.body;
         let fooditem = data.name;
         let _id = fooditem.replace(/\s+/g, '');
-        let timestamp = firestore.timestamp(new Date());
+        let timestamp = new admin.firestore.Timestamp(new Date());
         let json = {
             "_id": _id,
             "name": fooditem,
@@ -192,7 +192,7 @@ exports.people = functions.https.onRequest(async (req, res) => {
         //TODO: need to check if unique
         let docRef = await admin.firestore().collection("people");
         let data = req.body;
-        data[timestamp] = firestore.timestamp(new Date());
+        data[timestamp] = new admin.firestore.Timestamp(new Date());
         docRef.insertOne(data)
         .catch(error => {
             console.log("Error putting documents: ", error);
@@ -202,13 +202,38 @@ exports.people = functions.https.onRequest(async (req, res) => {
         //Switching from socket to just PUT requests
         //expecting a request body of :
         /**
-         * personId: kevinzhou1600039487
+         * name: Kevin Zhou
+         * timestamp: created by backend?
          * fulfilled: true
          */
         let docRef = await admin.firestore().collection("people");
         let data = req.body;
-        docRef.get(data.id)
+
+        //beginning of today
+        let startTimestamp = new Date();
+        startTimestamp.setHours(0,0,0,0);
+        startTimestamp = new admin.firestore.Timestamp(startTimestamp);
+        //end of today
+        let endTimestamp = new Date();
+        endTimestamp.setHours(23,59,59,999);
+        endTimestamp = new admin.firestore.Timestamp(endTimestamp);
+
+        let query = docRef.where("people", '==', data.name)
+            .where("timestamp", ">=", startTimestamp)
+            .where("timestamp", "<=", endTimestamp);
         
+        query.get().then(snapshot => (
+            //what if there's a repeat person? Asked McKinley, this may change later
+            snapshot.forEach(doc => {
+                const docId = doc.id
+                const result = await docRef.get(docId).update({"fulfilled": true})
+                    .catch(error => {
+                        console.log(error);
+                        res.sendStatus(500); //500 because error will likely be on Firebase end on not our API
+                    });
+            })
+        ))
+        res.sendStatus(200);
 
     }
 })
