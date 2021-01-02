@@ -1,6 +1,6 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-var serviceAccount = require("../pan-lang-firebase-adminsdk-4lptv-9bcce7a9e5.json");
+var serviceAccount = require("./pan-lang-firebase-adminsdk-4lptv-9bcce7a9e5.json");
 
 const { response } = require('express');
 const {Translate} = require('@google-cloud/translate').v2; // Import Google's Node.js client library for the Translate API https://cloud.google.com/translate/docs/reference/libraries/v2/nodejs
@@ -19,20 +19,6 @@ const LANGUAGES = ['es', 'de', 'fr', 'sv', 'ga', 'it', 'jp', 'zn-CN', 'sp'] //ne
 //to emulate
 //firebase emulators:start
 
-exports.makeUppercase = functions.firestore.document('/messages/{documentId}')
-    .onCreate((snapshot, context) => {
-        //grab the current value of thing written to Firestore
-        const original = snapshot.data().original;
-
-        //Access the parameter {documentId} with context.params
-        //Logs this to the log with severity "INFO"
-        functions.logger.log('Uppercasing', context.params.documentId, original);
-
-        const uppercase = original.toUpperCase();
-        //return a Promise because asynchronous
-        //writes to Firestore
-        return snapshot.ref.set({uppercase}, {merge: true});
-    })
 
     /**function for testing on an emulator to populate the emulator firestore database with a sample stock item */
 exports.insertSampleStock = functions.https.onRequest(async (req, res) => {
@@ -203,10 +189,9 @@ exports.people = functions.https.onRequest(async (req, res) => {
         //expecting a request body of :
         /**
          * name: Kevin Zhou
-         * timestamp: created by backend?
          * fulfilled: true
          */
-        let docRef = await admin.firestore().collection("people");
+        let docRef = admin.firestore().collection("people");
         let data = req.body;
         
         console.log(data);
@@ -227,13 +212,17 @@ exports.people = functions.https.onRequest(async (req, res) => {
         
         query.get().then(snapshot => (
             //what if there's a repeat person? Asked McKinley, this may change later
+            //also this assumes that the fulfill person is true, may need to fix this but maybe not?
             snapshot.forEach(doc => {
                 console.log(doc.id);
                 const docId = doc.id;
                 const personRef = docRef.doc(docId);
                 personRef.update({fulfilled: true});
             })
-        ))
+        )).catch(error => {
+            console.log(error);
+            res.sendStatus(500);
+        })
         res.sendStatus(200);
 
     }
