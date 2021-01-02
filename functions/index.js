@@ -188,13 +188,13 @@ exports.people = functions.https.onRequest(async (req, res) => {
         //Switching from socket to just PUT requests
         //expecting a request body of :
         /**
-         * name: Kevin Zhou
+         * id: A0G9JD0JS39GJC0Zs39g
          * fulfilled: true
          */
         let docRef = admin.firestore().collection("people");
         let data = req.body;
         
-        console.log(data);
+        console.log("data:", data);
         //beginning of today
         let startTimestamp = new Date();
         startTimestamp.setHours(0,0,0,0);
@@ -206,24 +206,15 @@ exports.people = functions.https.onRequest(async (req, res) => {
 
         console.log(startTimestamp, endTimestamp);
 
-        let query = docRef.where("name", '==', data.name)
-            .where("timestamp", ">=", startTimestamp)
-            .where("timestamp", "<=", endTimestamp);
-        
-        query.get().then(snapshot => (
-            //what if there's a repeat person? Asked McKinley, this may change later
-            //also this assumes that the fulfill person is true, may need to fix this but maybe not?
-            snapshot.forEach(doc => {
-                console.log(doc.id);
-                const docId = doc.id;
-                const personRef = docRef.doc(docId);
-                personRef.update({fulfilled: true});
-            })
-        )).catch(error => {
-            console.log(error);
-            res.sendStatus(500);
-        })
-        res.sendStatus(200);
-
+        console.log("trying to get doc:", data._id)
+        let query = docRef.doc(data._id);
+        const doc = await query.get();
+        if (!doc.exists) {
+            console.log('No such document!');
+            res.sendStatus(400);
+        } else {
+            query.update({fulfilled: true});
+            res.sendStatus(200);
+        }           
     }
 })
