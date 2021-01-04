@@ -1,5 +1,6 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+const Timestamp = admin.firestore.Timestamp;
 var serviceAccount = require("./pan-lang-firebase-adminsdk-4lptv-9bcce7a9e5.json");
 
 const { response } = require('express');
@@ -28,7 +29,7 @@ exports.insertSampleStock = functions.https.onRequest(async (req, res) => {
          "chinese": "鸡胸肉",
          "spanish": "Pechuga de pollo",
          "count": 26,
-         "timestamp": new admin.firestore.Timestamp(Math.floor(new Date().getTime()/1000), 0)
+         "timestamp": new Timestamp(Math.floor(new Date().getTime()/1000), 0)
         }
     const writeResult = await admin.firestore().collection('stock').add(stock_1);
     res.json({result: `Message with ID: ${writeResult.id} added.`});
@@ -43,7 +44,7 @@ exports.insertSamplePeople = functions.https.onRequest(async (req, res) => {
          "orderNotes": "1 Box, 2 Hot Dogs, 1 Diaper",
          "zipcode": 16046,
          "fulfilled": false,
-         "timestamp": new admin.firestore.Timestamp(Math.floor(new Date()/1000), 0)
+         "timestamp": new Timestamp(Math.floor(new Date()/1000), 0)
         }
     let person_2 = 
         {"name": "Renzo",
@@ -52,7 +53,7 @@ exports.insertSamplePeople = functions.https.onRequest(async (req, res) => {
          "orderNotes": "1 Box, 2 Cat Food, 2 Dog Food",
          "zipcode": 61806,
          "fulfilled": false,
-         "timestamp": new admin.firestore.Timestamp(Math.floor(new Date()/1000), 0)
+         "timestamp": new Timestamp(Math.floor(new Date()/1000), 0)
         }
     
     const writePantry = await admin.firestore().collection("pantries").doc("test").set({"name": "test"});
@@ -93,7 +94,7 @@ exports.stock = functions.https.onRequest(async (req, res) => {
         let data = req.body;
         let fooditem = data.name;
         let _id = fooditem.replace(/\s+/g, '');
-        let timestamp = new admin.firestore.Timestamp(Math.floor(new Date()/1000), 0)
+        let timestamp = new Timestamp(Math.floor(new Date()/1000), 0)
         let json = {
             "_id": _id,
             "name": fooditem,
@@ -160,8 +161,8 @@ exports.people = functions.https.onRequest(async (req, res) => {
          * }
          */
         
-        let pantry = req.body.pantry;
-        functions.logger.log(req.body);
+        let pantry = req.query.pantry;
+        functions.logger.log(req.query);
         if (pantry === undefined){
             console.log("Error, likely with pantry name");
             return res.status(500).send("Error, likely with pantry name");
@@ -170,14 +171,13 @@ exports.people = functions.https.onRequest(async (req, res) => {
             res.setHeader('Content-Type', 'text/csv');
             res.setHeader('Content-Disposition', 'attachment; filename="' + 'download-' + Date.now() + '.csv"');
             //setup for current month
-            const month = req.body.month;
-            const year = req.body.year;
+            const { month, year } = req.query;
             const start_date = new Date(parseInt(year || 0), parseInt(month || 1) - 1); // start of the desired month
             const end_date = new Date(parseInt(year || 9999), parseInt(month || 1)); // end of the desired month   
 
             let docRef = admin.firestore().collection("pantries").doc(pantry).collection("people");
             //query to get only people entries with a timestamp of the requested month
-            let query = docRef.where("timestamp", ">=", start_date.getTime()).where("timestamp", "<", end_date.getTime());
+            let query = docRef.where("timestamp", ">=", new Timestamp(Math.floor(start_date/1000), 0)).where("timestamp", "<", new Timestamp(Math.floor(end_date/1000), 0));
             query.get().then(qSnapshot => {
                 //add all results to an array
                 console.log("inside snapshot");
@@ -220,7 +220,7 @@ exports.people = functions.https.onRequest(async (req, res) => {
         let docRef = admin.firestore().collection("pantries").doc(pantry).collection("people");
         delete data[pantry];
         //create timestamp
-        data.timestamp = new admin.firestore.Timestamp(Math.floor(new Date()/1000), 0)
+        data.timestamp = new Timestamp(Math.floor(new Date()/1000), 0)
         docRef.add(data).then(() => {
             return res.sendStatus(200);
         })
@@ -243,11 +243,11 @@ exports.people = functions.https.onRequest(async (req, res) => {
         //beginning of today
         let startTimestamp = new Date();
         startTimestamp.setHours(0,0,0,0);
-        startTimestamp = new admin.firestore.Timestamp(Math.floor(startTimestamp.getTime()/1000), 0);
+        startTimestamp = new Timestamp(Math.floor(startTimestamp.getTime()/1000), 0);
         //end of today
         let endTimestamp = new Date();
         endTimestamp.setHours(23,59,59,999);
-        endTimestamp = new admin.firestore.Timestamp(Math.floor(endTimestamp.getTime()/1000), 0);
+        endTimestamp = new Timestamp(Math.floor(endTimestamp.getTime()/1000), 0);
 
         console.log("trying to get doc:", data._id)
         let query = docRef.doc(data._id);
