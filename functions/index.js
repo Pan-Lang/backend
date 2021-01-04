@@ -155,18 +155,23 @@ exports.people = functions.https.onRequest(async (req, res) => {
          * Expecting a req body with:
          * {
          *  pantry: pantry_name/email
+         *  month: 12
+         *  year: 2020
          * }
          */
         
         let pantry = req.body.pantry;
-        functions.logger.log(pantry);
-        try {
+        functions.logger.log(req.body);
+        if (pantry === undefined){
+            console.log("Error, likely with pantry name");
+            return res.status(500).send("Error, likely with pantry name");
+        } else {
             //setup for csv transfer
             res.setHeader('Content-Type', 'text/csv');
             res.setHeader('Content-Disposition', 'attachment; filename="' + 'download-' + Date.now() + '.csv"');
             //setup for current month
-            console.log(req.query);
-            const { month, year } = req.query;
+            const month = req.body.month;
+            const year = req.body.year;
             const start_date = new Date(parseInt(year || 0), parseInt(month || 1) - 1); // start of the desired month
             const end_date = new Date(parseInt(year || 9999), parseInt(month || 1)); // end of the desired month   
 
@@ -175,9 +180,10 @@ exports.people = functions.https.onRequest(async (req, res) => {
             let query = docRef.where("timestamp", ">=", start_date.getTime()).where("timestamp", "<", end_date.getTime());
             query.get().then(qSnapshot => {
                 //add all results to an array
-                let r = []
+                console.log("inside snapshot");
+                let r = [];
                 qSnapshot.forEach(doc => {
-                    console.log(doc.data());
+                    functions.logger.log(doc.data());
                     r.push(doc.data())
                 });
                 //write to a csv and download
@@ -193,10 +199,6 @@ exports.people = functions.https.onRequest(async (req, res) => {
                 functions.logger.log(err);
                 console.log("Error getting documents: ", error);
             });
-        } catch (err) {
-            functions.logger.log(err);
-            console.log("Error, likely with pantry name", err);
-            return res.status(500);
         }
     } else if (req.method === 'POST') {
         //Works on Postman 
