@@ -28,7 +28,8 @@ exports.insertSampleStock = functions.https.onRequest(async (req, res) => {
          "chinese": "鸡胸肉",
          "spanish": "Pechuga de pollo",
          "count": 26,
-         "timestamp": new admin.firestore.Timestamp(Math.floor(new Date().getTime()/1000), 0)}
+         "timestamp": new admin.firestore.Timestamp(Math.floor(new Date().getTime()/1000), 0)
+        }
     const writeResult = await admin.firestore().collection('stock').add(stock_1);
     res.json({result: `Message with ID: ${writeResult.id} added.`});
 })
@@ -52,8 +53,8 @@ exports.insertSamplePeople = functions.https.onRequest(async (req, res) => {
          "fulfilled": false,
          "timestamp": new admin.firestore.Timestamp(Math.floor(new Date()/1000), 0)
         }
-    const writeResult_1 = await admin.firestore().collection('people').add(person_1);
-    const writeResult_2 = await admin.firestore().collection('people').add(person_2);
+    const writeResult_1 = await admin.firestore().collection("pantries").doc("test").collection("people").add(person_1);
+    const writeResult_2 = await admin.firestore().collection("pantries").doc("test").collection("people").add(person_2);
     res.json({result: `Messages with ID: ${writeResult_1.id} ${writeResult_2.id}added.`});
 })
 /**
@@ -103,6 +104,7 @@ exports.stock = functions.https.onRequest(async (req, res) => {
         res.sendStatus(200);
     } else if (req.method === "PUT") {
         //update stock/
+        //Timestamp needs to be updated
     }
 })
 
@@ -134,6 +136,7 @@ exports.stockTranslate = functions.firestore.document("/stock/{stockid}")
 
 /**
  * Handles the people GET, POST, and PUT requests
+ * Timestamp will be handled by backend
  */
 exports.people = functions.https.onRequest(async (req, res) => {
     res.set('Access-Control-Allow-Origin', '*');
@@ -143,41 +146,71 @@ exports.people = functions.https.onRequest(async (req, res) => {
         res.set('Access-Control-Allow-Methods', 'GET, POST, PUT');
         res.set('Access-Control-Allow-Headers', 'Content-Type, Content-Disposition');
         res.set('Access-Control-Max-Age', '3600');
-        res.status(204).send('');
+        return res.status(204).send('');
     } else if (req.method === 'GET') {
-        //setup for csv transfer
-        res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', 'attachment; filename="' + 'download-' + Date.now() + '.csv"');
-        //setup for current month
-        console.log(req.query);
-        const { month, year } = req.query;
-        const start_date = new Date(parseInt(year || 0), parseInt(month || 1) - 1); // start of the desired month
-        const end_date = new Date(parseInt(year || 9999), parseInt(month || 1)); // end of the desired month   
+        /**
+         * Expecting a req body with:
+         * {
+         *  pantry: pantry_name/email
+         * }
+         */
+        
+        let pantry = req.body.pantry;
+        console.log(pantry);
+        try {
+            //setup for csv transfer
+            res.setHeader('Content-Type', 'text/csv');
+            res.setHeader('Content-Disposition', 'attachment; filename="' + 'download-' + Date.now() + '.csv"');
+            //setup for current month
+            console.log(req.query);
+            const { month, year } = req.query;
+            const start_date = new Date(parseInt(year || 0), parseInt(month || 1) - 1); // start of the desired month
+            const end_date = new Date(parseInt(year || 9999), parseInt(month || 1)); // end of the desired month   
 
-        let docRef = await admin.firestore().collection("people");
-        //query to get only people entries with a timestamp of the requested month
-        let query = docRef.where("timestamp", ">=", start_date.getTime()).where("timestamp", "<", end_date.getTime());
-        query.get().then(qSnapshot => {
-            //add all results to an array
-            let r = []
-            console.log("inside docref");
-            qSnapshot.forEach(doc => {
-                console.log(doc.data());
-                r.push(doc.data())
+            let docRef = admin.firestore().collection("pantries").doc(pantry).collection("people");
+            //query to get only people entries with a timestamp of the requested month
+            let query = docRef.where("timestamp", ">=", start_date.getTime()).where("timestamp", "<", end_date.getTime());
+            query.get().then(qSnapshot => {
+                //add all results to an array
+                let r = []
+                qSnapshot.forEach(doc => {
+                    console.log(doc.data());
+                    r.push(doc.data())
+                });
+                //write to a csv and download
+                fastcsv
+                .write(r, { headers: true })
+                .pipe(res)
+                return res.status(200);
+            })
+            .catch(error => {
+                r = "Error with request";
+                fastcsv.write(r)
+                .pipe(res);
+                console.log("Error getting documents: ", error);
             });
-            //write to a csv and download
-            fastcsv
-            .write(r, { headers: true })
-            .pipe(res)
-            return res.status(200);
-        })
-        .catch(error => {
-            console.log("Error getting documents: ", error);
-        });
+        } catch (err) {
+            console.log("Error, likely with pantry name", err);
+            return res.status(500);
+        }
     } else if (req.method === 'POST') {
-        //TODO: need to check if unique
-        let docRef = await admin.firestore().collection("people");
+        /**
+         * Expecting a req body of:
+         * {
+         *  pantry: pantry_name/email,
+         *  name: Kevin Zhou,
+         *  numAdults: 2,
+         *  numChildren: 3,
+         *  zipcode: 16046,
+         *  orderNotes: 2 boxes, 2 hotdogs,
+         *  fulfilled: false
+         * }
+         */
+        //TODO: need to check if unique?
+        let pantry = req.body.pantry;
         let data = req.body;
+        let docRef = admin.firestore().collection("pantries").doc(pantry).collection("people");
+        delete data[pantry];
         data[timestamp] = new admin.firestore.Timestamp(new Date());
         docRef.insertOne(data)
         .catch(error => {
@@ -185,15 +218,15 @@ exports.people = functions.https.onRequest(async (req, res) => {
         })
         res.sendStatus(200);
     } else if (req.method === 'PUT') {
-        //Switching from socket to just PUT requests
         //expecting a request body of :
         /**
-         * id: A0G9JD0JS39GJC0Zs39g
-         * fulfilled: true
+         * pantry: pantry_name (or email idk)
+         * _id: person_id
+         * fulfilled: true //note: this isn't actually being used so maybe just simplify it down so that don't need to send more stuff?
          */
-        let docRef = admin.firestore().collection("people");
         let data = req.body;
-        
+        let pantry = data.pantry;
+        let docRef = admin.firestore().collection("pantries").doc(pantry).collection("people");
         console.log("data:", data);
         //beginning of today
         let startTimestamp = new Date();
@@ -203,8 +236,6 @@ exports.people = functions.https.onRequest(async (req, res) => {
         let endTimestamp = new Date();
         endTimestamp.setHours(23,59,59,999);
         endTimestamp = new admin.firestore.Timestamp(Math.floor(endTimestamp.getTime()/1000), 0);
-
-        console.log(startTimestamp, endTimestamp);
 
         console.log("trying to get doc:", data._id)
         let query = docRef.doc(data._id);
