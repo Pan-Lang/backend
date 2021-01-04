@@ -35,6 +35,7 @@ exports.insertSampleStock = functions.https.onRequest(async (req, res) => {
 })
 
 exports.insertSamplePeople = functions.https.onRequest(async (req, res) => {
+    console.log("ah");
     let person_1 = 
         {"name": "Kevin",
          "numAdults": 2,
@@ -53,9 +54,11 @@ exports.insertSamplePeople = functions.https.onRequest(async (req, res) => {
          "fulfilled": false,
          "timestamp": new admin.firestore.Timestamp(Math.floor(new Date()/1000), 0)
         }
+    
+    const writePantry = await admin.firestore().collection("pantries").doc("test").set({"name": "test"});
     const writeResult_1 = await admin.firestore().collection("pantries").doc("test").collection("people").add(person_1);
     const writeResult_2 = await admin.firestore().collection("pantries").doc("test").collection("people").add(person_2);
-    res.json({result: `Messages with ID: ${writeResult_1.id} ${writeResult_2.id}added.`});
+    res.json({result: `Pantry with ID: ${writePantry} with documents ${writeResult_1.id} ${writeResult_2.id} added.`});
 })
 /**
  * Handles the stock GET, POST, and PUT requests
@@ -90,7 +93,7 @@ exports.stock = functions.https.onRequest(async (req, res) => {
         let data = req.body;
         let fooditem = data.name;
         let _id = fooditem.replace(/\s+/g, '');
-        let timestamp = new admin.firestore.Timestamp(new Date());
+        let timestamp = new admin.firestore.Timestamp(Math.floor(new Date()/1000), 0)
         let json = {
             "_id": _id,
             "name": fooditem,
@@ -156,7 +159,7 @@ exports.people = functions.https.onRequest(async (req, res) => {
          */
         
         let pantry = req.body.pantry;
-        console.log(pantry);
+        functions.logger.log(pantry);
         try {
             //setup for csv transfer
             res.setHeader('Content-Type', 'text/csv');
@@ -187,13 +190,16 @@ exports.people = functions.https.onRequest(async (req, res) => {
                 r = "Error with request";
                 fastcsv.write(r)
                 .pipe(res);
+                functions.logger.log(err);
                 console.log("Error getting documents: ", error);
             });
         } catch (err) {
+            functions.logger.log(err);
             console.log("Error, likely with pantry name", err);
             return res.status(500);
         }
     } else if (req.method === 'POST') {
+        //Works on Postman 
         /**
          * Expecting a req body of:
          * {
@@ -211,12 +217,16 @@ exports.people = functions.https.onRequest(async (req, res) => {
         let data = req.body;
         let docRef = admin.firestore().collection("pantries").doc(pantry).collection("people");
         delete data[pantry];
-        data[timestamp] = new admin.firestore.Timestamp(new Date());
-        docRef.insertOne(data)
+        //create timestamp
+        data.timestamp = new admin.firestore.Timestamp(Math.floor(new Date()/1000), 0)
+        docRef.add(data).then(() => {
+            return res.sendStatus(200);
+        })
         .catch(error => {
             console.log("Error putting documents: ", error);
+            res.sendStatus(500);
         })
-        res.sendStatus(200);
+        
     } else if (req.method === 'PUT') {
         //expecting a request body of :
         /**
