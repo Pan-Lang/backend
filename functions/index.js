@@ -311,3 +311,25 @@ exports.people = functions.https.onRequest(async (req, res) => {
         }           
     }
 })
+
+exports.pantry = functions.https.onRequest(async (req, res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    if (req.method === 'OPTIONS') {
+        // Send response to OPTIONS requests
+        console.log('doing some CORS stuff');
+        res.set('Access-Control-Allow-Methods', 'POST');
+        res.set('Access-Control-Allow-Headers', 'Content-Type, Content-Disposition');
+        res.set('Access-Control-Max-Age', '3600');
+    return res.status(204).send('');
+    } else if (req.method === 'POST') {  
+        /**Expects a body with:
+         * {
+         *   email: pantry@sample.com
+         *   name : Pantry Name
+         * }
+         */
+        let data = req.body;
+        const writePantry = await admin.firestore().collection("pantries").doc(data.email).set({"name": data.name});
+        res.status(204).send(`Pantry with id: ${writePantry} inserted`);
+    }
+)
