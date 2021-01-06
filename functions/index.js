@@ -157,7 +157,7 @@ exports.stock = functions.https.onRequest(async (req, res) => {
             docRef.update({timestamp: new Timestamp(Math.floor(new Date()/1000), 0)})
             res.status(204).send("updated successfully");
         }
-        //Timestamp needs to be updated
+        
     }
 })
 
