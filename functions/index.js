@@ -75,6 +75,11 @@ exports.stock = functions.https.onRequest(async (req, res) => {
         res.set('Access-Control-Max-Age', '3600');
         res.status(204).send('');
     } else if (req.method === 'GET') {
+        /** Expects a request query of:
+         * {
+         *   pantry: pantry_email@sample.com
+         * }
+         */
         let docRef = await admin.firestore().collection("stock");
         docRef.get().then(qSnapshot => {
             let r = []
@@ -155,7 +160,7 @@ exports.people = functions.https.onRequest(async (req, res) => {
         /**
          * Expecting a req **query** with:
          * {
-         *  pantry: pantry_name/email
+         *  pantry: pantry_email
          *  month: 12
          *  year: 2020
          * }
@@ -205,7 +210,7 @@ exports.people = functions.https.onRequest(async (req, res) => {
         /**
          * Expecting a req body of:
          * {
-         *  pantry: pantry_name/email,
+         *  pantry: pantry_email,
          *  name: Kevin Zhou,
          *  numAdults: 2,
          *  numChildren: 3,
@@ -232,7 +237,7 @@ exports.people = functions.https.onRequest(async (req, res) => {
     } else if (req.method === 'PUT') {
         //expecting a request body of :
         /**
-         * pantry: pantry_name (or email idk)
+         * pantry: pantry_email
          * _id: person_id
          * fulfilled: true //note: this isn't actually being used so maybe just simplify it down so that don't need to send more stuff?
          */
