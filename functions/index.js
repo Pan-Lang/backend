@@ -31,12 +31,13 @@ exports.insertSampleStock = functions.https.onRequest(async (req, res) => {
          "count": 26,
          "timestamp": new Timestamp(Math.floor(new Date().getTime()/1000), 0)
         }
-    const writeResult = await admin.firestore().collection('stock').add(stock_1);
-    res.json({result: `Message with ID: ${writeResult.id} added.`});
+    const writePantry = await admin.firestore().collection("pantries").doc("test@gmail.com").set({"name": "test"});
+    const writeResult = await admin.firestore().collection("pantries").doc("test@gmail.com").collection('stock').doc("chickenbreast").set(stock_1);
+    res.json({result: `Pantry ${writePantry} created with message ${writeResult.value} added.`});
 })
 
 exports.insertSamplePeople = functions.https.onRequest(async (req, res) => {
-    console.log("ah");
+
     let person_1 = 
         {"name": "Kevin",
          "numAdults": 2,
@@ -56,9 +57,9 @@ exports.insertSamplePeople = functions.https.onRequest(async (req, res) => {
          "timestamp": new Timestamp(Math.floor(new Date()/1000), 0)
         }
     
-    const writePantry = await admin.firestore().collection("pantries").doc("test").set({"name": "test"});
-    const writeResult_1 = await admin.firestore().collection("pantries").doc("test").collection("people").add(person_1);
-    const writeResult_2 = await admin.firestore().collection("pantries").doc("test").collection("people").add(person_2);
+    const writePantry = await admin.firestore().collection("pantries").doc("test@gmail.com").set({"name": "test"});
+    const writeResult_1 = await admin.firestore().collection("pantries").doc("test@gmail.com").collection("people").add(person_1);
+    const writeResult_2 = await admin.firestore().collection("pantries").doc("test@gmail.com").collection("people").add(person_2);
     res.json({result: `Pantry with ID: ${writePantry} with documents ${writeResult_1.id} ${writeResult_2.id} added.`});
 })
 /**
@@ -75,12 +76,14 @@ exports.stock = functions.https.onRequest(async (req, res) => {
         res.set('Access-Control-Max-Age', '3600');
         res.status(204).send('');
     } else if (req.method === 'GET') {
-        /** Expects a request query of:
+        /** Expects a request **query** of:
          * {
          *   pantry: pantry_email@sample.com
          * }
          */
-        let docRef = await admin.firestore().collection("stock");
+        let pantry = req.query.pantry;
+        functions.logger.log(pantry);
+        let docRef = admin.firestore().collection("pantries").doc(pantry).collection("stock");
         docRef.get().then(qSnapshot => {
             let r = []
             console.log("inside docref");
@@ -92,27 +95,68 @@ exports.stock = functions.https.onRequest(async (req, res) => {
         })
         .catch(error => {
             console.log("Error getting documents: ", error);
+            return res.sendstatus(422)
         });
-    } else if (req.method === 'POST') { //create a new thing
-        //TODO: make sure the POST request is unique: if not unique, then res.sendstatus repeat or something
-        let docRef = await admin.firestore().collection("stock");
+    } else if (req.method === 'POST') { 
+        /** Expects a req body with:
+         * {
+            "pantry": pantry_email@sample.com
+            "name": "Item Name"
+            "count": {new_count} (Integer)
+           }
+         * 
+         */
         let data = req.body;
+        let pantry = data.pantry;
+
+        let docRef = admin.firestore().collection("pantries").doc(pantry).collection("stock");
         let fooditem = data.name;
         let _id = fooditem.replace(/\s+/g, '');
-        let timestamp = new Timestamp(Math.floor(new Date()/1000), 0)
-        let json = {
-            "_id": _id,
-            "name": fooditem,
-            "count": body.count,
-            "timestamp": timestamp
+
+        //check for uniqueness
+        let query = docRef.where("_id", "==", _id);
+        let checkDoc = await query.get();
+        if (!checkDoc.exists) {
+            let timestamp = new Timestamp(Math.floor(new Date()/1000), 0)
+            let json = {
+                "_id": _id,
+                "name": fooditem,
+                "count": data.count,
+                "timestamp": timestamp
+            }
+            docRef.add(json).then(() => {
+                res.sendStatus(200);
+            })
+            .catch(error => {
+                res.status(500).send("something went wrong, " + error);
+                console.log("Error putting documents: ", error);
+            })
+            
+        } else {
+            res.status(422).send("This is a repeat item"); //this code may have to be changed
         }
-        docRef.insertOne(json)
-        .catch(error => {
-            console.log("Error putting documents: ", error);
-        })
-        res.sendStatus(200);
+        
     } else if (req.method === "PUT") {
-        //update stock/
+        /** Expects a req body with:
+         * {
+            "pantry": pantry_email@sample.com
+            "_id": fooditem
+            "newCount": newCount
+            }
+         */
+        let data = req.body;
+        let pantry = data.pantry;
+        let _id = data._id;
+        let newCount = data.newCount;
+
+        if (pantry === undefined) {
+            res.status(422).send("Problem with pantry name");
+        } else {
+            let docRef = admin.firestore().collection("pantries").doc(pantry).collection("stock").doc(_id);
+            docRef.update({count: newCount})
+            docRef.update({timestamp: new Timestamp(Math.floor(new Date()/1000), 0)})
+            res.status(204).send("updated successfully");
+        }
         //Timestamp needs to be updated
     }
 })
@@ -170,7 +214,7 @@ exports.people = functions.https.onRequest(async (req, res) => {
         functions.logger.log(req.query);
         if (pantry === undefined){
             console.log("Error, likely with pantry name");
-            return res.status(500).send("Error, likely with pantry name");
+            return res.status(422).send("Error, likely with pantry name");
         } else {
             //setup for csv transfer
             res.setHeader('Content-Type', 'text/csv');
@@ -231,7 +275,7 @@ exports.people = functions.https.onRequest(async (req, res) => {
         })
         .catch(error => {
             console.log("Error putting documents: ", error);
-            res.sendStatus(500);
+            res.sendStatus(422);
         })
         
     } else if (req.method === 'PUT') {
@@ -262,6 +306,7 @@ exports.people = functions.https.onRequest(async (req, res) => {
             res.sendStatus(400).send("No such document");
         } else {
             query.update({fulfilled: true});
+            query.update({Timestamp: new Timestamp(Math.floor(new Date()/1000), 0)})
             res.sendStatus(200);
         }           
     }
