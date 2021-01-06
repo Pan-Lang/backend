@@ -89,7 +89,7 @@ exports.stock = functions.https.onRequest(async (req, res) => {
             console.log("Error getting documents: ", error);
         });
     } else if (req.method === 'POST') { //create a new thing
-        //TODO: make sure the POST request is unique
+        //TODO: make sure the POST request is unique: if not unique, then res.sendstatus repeat or something
         let docRef = await admin.firestore().collection("stock");
         let data = req.body;
         let fooditem = data.name;
@@ -153,7 +153,7 @@ exports.people = functions.https.onRequest(async (req, res) => {
         return res.status(204).send('');
     } else if (req.method === 'GET') {
         /**
-         * Expecting a req body with:
+         * Expecting a req **query** with:
          * {
          *  pantry: pantry_name/email
          *  month: 12
@@ -249,12 +249,12 @@ exports.people = functions.https.onRequest(async (req, res) => {
         endTimestamp.setHours(23,59,59,999);
         endTimestamp = new Timestamp(Math.floor(endTimestamp.getTime()/1000), 0);
 
-        console.log("trying to get doc:", data._id)
+        functions.logger.log("trying to get doc:", data._id)
         let query = docRef.doc(data._id);
         const doc = await query.get();
         if (!doc.exists) {
-            console.log('No such document!');
-            res.sendStatus(400);
+            functions.logger.log('No such document!');
+            res.sendStatus(400).send("No such document");
         } else {
             query.update({fulfilled: true});
             res.sendStatus(200);
