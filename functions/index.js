@@ -22,6 +22,7 @@ const LANGUAGES = ['es', 'de', 'fr', 'sv', 'ga', 'it', 'jp', 'zn-CN', 'sp'] //ne
 
 
     /**function for testing on an emulator to populate the emulator firestore database with a sample stock item */
+
 exports.insertSampleStock = functions.https.onRequest(async (req, res) => {
     let stock_1 = 
         {"name": "Chicken Breast",
@@ -125,7 +126,7 @@ exports.stock = functions.https.onRequest(async (req, res) => {
                 "timestamp": timestamp
             }
             docRef.add(json).then(() => {
-                res.sendStatus(200);
+                return res.sendStatus(200);
             })
             .catch(error => {
                 res.status(500).send("something went wrong, " + error);
@@ -245,8 +246,10 @@ exports.people = functions.https.onRequest(async (req, res) => {
                 r = "Error with request";
                 fastcsv.write(r)
                 .pipe(res);
-                functions.logger.log(err);
+                functions.logger.log(error);
+            
                 console.log("Error getting documents: ", error);
+                return error;
             });
         }
     } else if (req.method === 'POST') {
@@ -275,7 +278,7 @@ exports.people = functions.https.onRequest(async (req, res) => {
         })
         .catch(error => {
             console.log("Error putting documents: ", error);
-            res.sendStatus(422);
+            return res.sendStatus(422);
         })
         
     } else if (req.method === 'PUT') {
@@ -303,11 +306,34 @@ exports.people = functions.https.onRequest(async (req, res) => {
         const doc = await query.get();
         if (!doc.exists) {
             functions.logger.log('No such document!');
-            res.sendStatus(400).send("No such document");
+            return res.sendStatus(400).send("No such document");
         } else {
             query.update({fulfilled: true});
             query.update({Timestamp: new Timestamp(Math.floor(new Date()/1000), 0)})
-            res.sendStatus(200);
+            return res.sendStatus(200);
         }           
+    }
+})
+
+exports.pantry = functions.https.onRequest(async (req, res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    if (req.method === 'OPTIONS') {
+        // Send response to OPTIONS requests
+        console.log('doing some CORS stuff');
+        res.set('Access-Control-Allow-Methods', 'POST');
+        res.set('Access-Control-Allow-Headers', 'Content-Type, Content-Disposition');
+        res.set('Access-Control-Max-Age', '3600');
+    return res.status(204).send('');
+    } else if (req.method === 'POST') {  
+        /**Expects a body with:
+         * {
+         *   uid: auth.uid
+         *   email: pantry@sample.com
+         *   name : Pantry Name
+         * }
+         */
+        let data = req.body;
+        const writePantry = await admin.firestore().collection("pantries").doc(data.uid).set({"name": data.name, "email": data.email});
+        return res.status(204).send(`Pantry with id: ${writePantry} inserted`);
     }
 })
