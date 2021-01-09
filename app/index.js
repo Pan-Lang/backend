@@ -1,8 +1,8 @@
 //can be put into a config.js but current config.js is not being used right now
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-const dotenv = require('dotenv')
-dotenv.config();
+// const dotenv = require('dotenv') // Probably don't need this anymore...
+// dotenv.config();
 const port = process.env.PORT||3000
 const uri = process.env.MONGODB_URI 
 
@@ -63,10 +63,7 @@ getPeopleCollection().then(coll => {
         console.log("connections left: ", io.engine.clientsCount)
       }))
     })
-    )
-    
-
-    
+    ) 
 })
 
 
@@ -103,7 +100,7 @@ async function translateText(text, lang) {
   // translating a single piece of text, or an array of strings for translating
   // multiple texts.
   let [translations] = await translate.translate(text, lang);
-  let t
+  let t;
   translations = Array.isArray(translations) ? translations : [translations];
   //In out implementation its only one item in translation, not an array. If you pass an array it will only return the last item in that array
   translations.forEach((translation) => {
@@ -241,7 +238,7 @@ app.post('/stock', (req, res) => {
         })
       })
     })
-    
+
   })
 })
 

@@ -14,6 +14,7 @@ admin.initializeApp({
 
 
 const LANGUAGES = ['es', 'de', 'fr', 'sv', 'ga', 'it', 'jp', 'zn-CN', 'sp'] //need to find the rest of the languages
+const translate = new Translate(); // creates a client
 
 //to deploy
 //********************** firebase deploy --only functions **********************/
@@ -125,6 +126,8 @@ exports.stockTranslate = functions.firestore.document("/stock/{stockid}")
             promises.push(async() => { //this is from the firebase example code on github, i dont understand some of it tho
                 //https://github.com/firebase/functions-samples/blob/master/message-translation/functions/index.js
                 const result = await translate.translate(fooditem, language);
+                // return something here...
+                // return admin.firestore().
             });
         });
         let [translations] = await translate.translate(fooditem, lang);
@@ -133,10 +136,10 @@ exports.stockTranslate = functions.firestore.document("/stock/{stockid}")
         //In out implementation its only one item in translation, not an array. If you pass an array it will only return the last item in that array
         translations.forEach((translation) => {
           t = translation;
-      
         });
-
-    })
+        // return something here...
+        // return Promise.all(promises);
+    });
 
 /**
  * Handles the people GET, POST, and PUT requests
