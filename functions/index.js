@@ -81,7 +81,7 @@ exports.stock = functions.https.onRequest(async (req, res) => {
     } else if (req.method === 'GET') {
         /** Expects a request **query** of:
          * {
-         *   pantry: pantry_email@sample.com
+         *   pantry: pantry_id
          * }
          */
         let pantry = req.query.pantry;
@@ -103,7 +103,7 @@ exports.stock = functions.https.onRequest(async (req, res) => {
     } else if (req.method === 'POST') {
         /** Expects a req body with:
          * {
-            "pantry": pantry_email@sample.com
+            "pantry": pantry_id
             "name": "Item Name"
             "count": {new_count} (Integer)
            }
@@ -142,7 +142,7 @@ exports.stock = functions.https.onRequest(async (req, res) => {
     } else if (req.method === "PUT") {
         /** Expects a req body with:
          * {
-            "pantry": pantry_email@sample.com
+            "pantry": pantry_id
             "_id": fooditem
             "newCount": newCount
             }
@@ -207,7 +207,7 @@ exports.people = functions.https.onRequest(async (req, res) => {
         /**
          * Expecting a req **query** with:
          * {
-         *  pantry: pantry_email
+         *  pantry: pantry_id
          *  month: 12
          *  year: 2020
          * }
@@ -259,7 +259,7 @@ exports.people = functions.https.onRequest(async (req, res) => {
         /**
          * Expecting a req body of:
          * {
-         *  pantry: pantry_email,
+         *  pantry: pantry_id,
          *  name: Kevin Zhou,
          *  numAdults: 2,
          *  numChildren: 3,
@@ -286,7 +286,7 @@ exports.people = functions.https.onRequest(async (req, res) => {
     } else if (req.method === 'PUT') {
         //expecting a request body of :
         /**
-         * pantry: pantry_email
+         * pantry: pantry_id
          * _id: person_id
          * fulfilled: true //note: this isn't actually being used so maybe just simplify it down so that don't need to send more stuff?
          */
