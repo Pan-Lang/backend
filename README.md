@@ -31,6 +31,9 @@ The backend was built with:
   2. `git clone Pan-Lang` in the designated folder on your machine.
   3. `npm install` to install the project dependencies.
   4. The core component of this project makes use of the Google Cloud Translate API. If you want to use translation features, you'll have to make a new project on Google Cloud Platform and generate a new API key. Detailed instructions for this setup can be found [here](https://cloud.google.com/translate/docs/setup).
+
+
+
   
   
 
