@@ -32,16 +32,6 @@ The backend was built with:
   3. `npm install` to install the project dependencies.
   4. The core component of this project makes use of the Google Cloud Translate API. If you want to use translation features, you'll have to make a new project on Google Cloud Platform and generate a new API key. Detailed instructions for this setup can be found [here](https://cloud.google.com/translate/docs/setup).
 
-  ## Updating Google Cloud Translate API Key / Environment Configuration
-  1. Install [Firebase CLI](https://firebase.google.com/docs/cli)
-  2. Login to firebase: `firebase login`
-  3. Set the current project: `firebase use pan-lang`
-    3. Project ID can be found by running: `firebase projects:list`
-  4. Set Google Cloud Translate API key: `firebase functions:config:set gctranslate.key="THE API KEY"`
-  5. Other options:
-    5. Retreive current environment information: firebase functions:config:get
-    5. Additional information can be found [here](https://firebase.google.com/docs/functions/config-env)
-
 
 
   
