@@ -89,10 +89,11 @@ exports.stock = functions.https.onRequest(async (req, res) => {
         let docRef = admin.firestore().collection("pantries").doc(pantry).collection("stock");
         docRef.get().then(qSnapshot => {
             let r = []
-            console.log("inside docref");
             qSnapshot.forEach(doc => {
-                console.log(doc.data());
-                r.push(doc.data())
+                let data = doc.data();
+                data._id= doc.id;
+                console.log(data)
+                r.push(data)
             });
             return res.status(200).jsonp(r);
         })
@@ -156,22 +157,10 @@ exports.stock = functions.https.onRequest(async (req, res) => {
         if (pantry === undefined) {
             res.status(422).send("Problem with pantry name.");
         } else {
-            const pantryStock = admin.firestore().collection("pantries").doc(pantry).collection("stock");
-            
-            // Fetch snapshot of documents with matching _id
-            const snapshot = await pantryStock.where('_id', '==', _id).get();
-            
-            // If no documents are found, return error response.
-            if (snapshot.empty) {
-                res.status(404).send('Stock item not found.')
-            } else {
-                // Update the first matching document
-                // FIXME: handle documents with identical `_id`s?
-                let docRef = snapshot.docs[0].ref;
-                docRef.update({ count: newCount })
-                docRef.update({ timestamp: new Timestamp(Math.floor(new Date() / 1000), 0) })
-                res.status(200).send("updated successfully");
-            }
+            let docRef = admin.firestore().collection("pantries").doc(pantry).collection("stock").doc(_id);
+            docRef.update({ count: newCount })
+            docRef.update({ timestamp: new Timestamp(Math.floor(new Date() / 1000), 0) })
+            res.status(204).send("updated successfully");
             
         }
 
