@@ -153,12 +153,25 @@ exports.stock = functions.https.onRequest(async (req, res) => {
         let newCount = data.newCount;
 
         if (pantry === undefined) {
-            res.status(422).send("Problem with pantry name");
+            res.status(422).send("Problem with pantry name.");
         } else {
-            let docRef = admin.firestore().collection("pantries").doc(pantry).collection("stock").doc(_id);
-            docRef.update({ count: newCount })
-            docRef.update({ timestamp: new Timestamp(Math.floor(new Date() / 1000), 0) })
-            res.status(204).send("updated successfully");
+            const pantryStock = admin.firestore().collection("pantries").doc(pantry).collection("stock");
+            
+            // Fetch snapshot of documents with matching _id
+            const snapshot = await pantryStock.where('_id', '==', _id).get();
+            
+            // If no documents are found, return error response.
+            if (snapshot.empty) {
+                res.status(404).send('Stock item not found.')
+            } else {
+                // Update the first matching document
+                // FIXME: handle documents with identical `_id`s?
+                let docRef = snapshot.docs[0].ref;
+                docRef.update({ count: newCount })
+                docRef.update({ timestamp: new Timestamp(Math.floor(new Date() / 1000), 0) })
+                res.status(200).send("updated successfully");
+            }
+            
         }
 
     }
