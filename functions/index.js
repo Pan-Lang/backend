@@ -89,10 +89,11 @@ exports.stock = functions.https.onRequest(async (req, res) => {
         let docRef = admin.firestore().collection("pantries").doc(pantry).collection("stock");
         docRef.get().then(qSnapshot => {
             let r = []
-            console.log("inside docref");
             qSnapshot.forEach(doc => {
-                console.log(doc.data());
-                r.push(doc.data())
+                let data = doc.data();
+                data._id= doc.id;
+                console.log(data)
+                r.push(data)
             });
             return res.status(200).jsonp(r);
         })
@@ -117,17 +118,16 @@ exports.stock = functions.https.onRequest(async (req, res) => {
         let _id = fooditem.replace(/\s+/g, '');
 
         //check for uniqueness
-        let query = docRef.where("_id", "==", _id);
+        let query = docRef.doc(_id);
         let checkDoc = await query.get();
         if (!checkDoc.exists) {
             let timestamp = new Timestamp(Math.floor(new Date() / 1000), 0)
             let json = {
-                "_id": _id,
                 "name": fooditem,
                 "count": data.count,
                 "timestamp": timestamp
             }
-            docRef.add(json).then(() => {
+            docRef.doc(_id).set(json).then(() => {
                 return res.sendStatus(200);
             })
                 .catch(error => {
@@ -151,14 +151,17 @@ exports.stock = functions.https.onRequest(async (req, res) => {
         let pantry = data.pantry;
         let _id = data._id;
         let newCount = data.newCount;
+        
+        console.log(newCount)
 
         if (pantry === undefined) {
-            res.status(422).send("Problem with pantry name");
+            res.status(422).send("Problem with pantry name.");
         } else {
             let docRef = admin.firestore().collection("pantries").doc(pantry).collection("stock").doc(_id);
             docRef.update({ count: newCount })
             docRef.update({ timestamp: new Timestamp(Math.floor(new Date() / 1000), 0) })
             res.status(204).send("updated successfully");
+            
         }
 
     }
