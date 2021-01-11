@@ -247,7 +247,7 @@ exports.people = functions.https.onRequest(async (req, res) => {
         let pantry = req.body.pantry;
         let data = req.body;
         let docRef = admin.firestore().collection("pantries").doc(pantry).collection("people");
-        delete data[pantry];
+        delete data.pantry;
         //create timestamp
         data.timestamp = new Timestamp(Math.floor(new Date() / 1000), 0)
         docRef.add(data).then(() => {
