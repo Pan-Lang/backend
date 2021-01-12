@@ -149,7 +149,7 @@ exports.stock = functions.https.onRequest(async (req, res) => {
         let _id = data._id;
         let newCount = data.newCount;
         
-        console.log(newCount)
+        console.log("PUT", data);
 
         if (pantry === undefined) {
             res.status(422).send("Problem with pantry name.");
@@ -235,7 +235,8 @@ exports.people = functions.https.onRequest(async (req, res) => {
          * Expecting a req body of:
          * {
          *  pantry: pantry_id,
-         *  name: Kevin Zhou,
+         *  firstName: Kevin
+         *  lastName: Zhou
          *  numAdults: 2,
          *  numChildren: 3,
          *  zipcode: 16046,
