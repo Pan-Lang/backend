@@ -1,16 +1,39 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const Timestamp = admin.firestore.Timestamp;
-let serviceAccount = require("./pan-lang-firebase-adminsdk-4lptv-9bcce7a9e5.json");
+let serviceAccount = require("./pan-lang-firebase-sdk-service.json");
 
 const { response } = require('express');
-
+const { Translate } = require('@google-cloud/translate').v2; // Import Google's Node.js client library for the Translate API https://cloud.google.com/translate/docs/reference/libraries/v2/nodejs
 const fastcsv = require("fast-csv");
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
     databaseURL: "https://pan-lang-default-rtdb.firebaseio.com"
 });
+
+const translate = new Translate(); // creates a client
+const LANGUAGES = ['ar', //Arabic
+                'be', //Belarusian
+                'zh-CN', //Chinese (Simplified)
+                'hr', //Croatian
+                'da', //Danish
+                'et', //Estonian
+                'tl', //Filipino
+                'fi', //Finnish
+                'fr', //French
+                'de', //German
+                'el', //Greek
+                'ht', //Haitian Creole
+                'iw', //Hebrew
+                'hi', //Hindi
+                'id', //Indonesian
+                'ja', //Japanese
+                'pl', //Polish
+                'es', //Spanish
+                'th', //Thai
+                'vi', //Vietnamese
+                ]
 
 //to deploy
 //********************** firebase deploy --only functions **********************/
@@ -165,7 +188,31 @@ exports.stock = functions.https.onRequest(async (req, res) => {
 })
 
 /**
+ * Handles the translation of a fooditem once inserted into the database
+ */
+// https://github.com/firebase/functions-samples/blob/master/message-translation/functions/index.js
+exports.stockTranslate = functions.firestore.document("/pantries/{pantryId}/stock/{stockId}")
+    .onCreate(async (snapshot, context) => {
 
+        const fooditem = snapshot.data();
+        console.log(fooditem);
+        if (fooditem.translated) {
+            return null;
+        }
+        
+        if (fooditem === undefined)  
+            return -1;
+        functions.logger.log('Translating', context.params.stockId, fooditem.name);
+        LANGUAGES.forEach(async (language) => {
+            let [result] = await translate.translate(fooditem.name, language);
+            let translationProp = "translations." + language; //this puts everything under "translations" and then the respective language
+            snapshot.ref.update({[translationProp]: result });
+        });
+        snapshot.ref.update({translated: true})
+        return 0;
+    });
+
+/**
  * Handles the people GET, POST, and PUT requests
  * Timestamp will be handled by backend
  */
