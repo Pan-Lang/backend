@@ -191,23 +191,25 @@ exports.stock = functions.https.onRequest(async (req, res) => {
  * Handles the translation of a fooditem once inserted into the database
  */
 // https://github.com/firebase/functions-samples/blob/master/message-translation/functions/index.js
-exports.stockTranslate = functions.firestore.document("/stock/{stockId}")
+exports.stockTranslate = functions.firestore.document("/pantries/{pantryId}/stock/{stockId}")
     .onCreate(async (snapshot, context) => {
 
         const fooditem = snapshot.data();
         console.log(fooditem);
-        if (fooditem.traslated) {
+        if (fooditem.translated) {
             return null;
         }
-        functions.logger.log('Translating', context.params.stockId, fooditem.name);
-        if (fooditem === undefined)  
-            return; 
         
+        if (fooditem === undefined)  
+            return -1;
+        functions.logger.log('Translating', context.params.stockId, fooditem.name);
         LANGUAGES.forEach(async (language) => {
             let [result] = await translate.translate(fooditem.name, language);
             let translationProp = "translations." + language; //this puts everything under "translations" and then the respective language
-            snapshot.ref.update({[translationProp]: result })
+            snapshot.ref.update({[translationProp]: result });
         });
+        snapshot.ref.update({translated: true})
+        return 0;
     });
 
 /**
