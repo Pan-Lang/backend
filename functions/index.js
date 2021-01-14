@@ -12,6 +12,7 @@ admin.initializeApp({
     databaseURL: "https://pan-lang-default-rtdb.firebaseio.com"
 });
 
+
 const translate = new Translate(); // creates a client
 const LANGUAGES = ['ar', //Arabic
                 'be', //Belarusian
@@ -197,19 +198,28 @@ exports.stockTranslate = functions.firestore.document("/pantries/{pantryId}/stoc
         const fooditem = snapshot.data();
         console.log(fooditem);
         if (fooditem.translated) {
+            console.log("food item already translated");
             return null;
         }
         
-        if (fooditem === undefined)  
+        if (fooditem === undefined)  {
+            console.log("fooditem is undefined");
             return -1;
+        }
+
         functions.logger.log('Translating', context.params.stockId, fooditem.name);
         LANGUAGES.forEach(async (language) => {
             let [result] = await translate.translate(fooditem.name, language);
             let translationProp = "translations." + language; //this puts everything under "translations" and then the respective language
             snapshot.ref.update({[translationProp]: result });
         });
-        snapshot.ref.update({translated: true})
-        return 0;
+        snapshot.ref.update({translated: true}).then(() => {
+            return 0;
+        }).catch((err) => {
+            console.log(err);
+            return -1;
+        })
+        
     });
 
 /**
