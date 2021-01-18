@@ -240,7 +240,7 @@ exports.people = functions.https.onRequest(async (req, res) => {
          * Expecting a req **query** with:
          * {
          *  pantry: pantry_id
-         *  month: 12
+         *  month: 1-12
          *  year: 2020
          * }
          */
@@ -253,7 +253,7 @@ exports.people = functions.https.onRequest(async (req, res) => {
         } else {
             //setup for csv transfer
             res.setHeader('Content-Type', 'text/csv');
-            res.setHeader('Content-Disposition', 'attachment; filename="' + 'download-' + Date.now() + '.csv"');
+            res.setHeader('Content-Disposition', 'attachment; filename="' + 'order-data-' + new Date().toString() + '.csv"');
             //setup for current month
             const { month, year } = req.query;
             const start_date = new Date(parseInt(year || 0), parseInt(month || 1) - 1); // start of the desired month
@@ -267,8 +267,9 @@ exports.people = functions.https.onRequest(async (req, res) => {
                 console.log("inside snapshot");
                 let r = [];
                 qSnapshot.forEach(doc => {
-                    functions.logger.log(doc.data());
-                    r.push(doc.data())
+                    let docData = doc.data();
+                    docData.timestamp = docData.timestamp.toDate().toString();
+                    r.push(docData)
                 });
                 //write to a csv and download
                 fastcsv
