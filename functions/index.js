@@ -345,7 +345,7 @@ exports.people = functions.https.onRequest(async (req, res) => {
             return res.sendStatus(400).send("No such document");
         } else {
             query.update({ fulfilled: true });
-            query.update({ Timestamp: new Timestamp(Math.floor(new Date() / 1000), 0) })
+            query.update({ timestamp: new Timestamp(Math.floor(new Date() / 1000), 0) })
             return res.sendStatus(200);
         }
     }
